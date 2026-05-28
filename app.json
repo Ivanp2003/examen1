@@ -7,20 +7,21 @@
     "icon": "./assets/icon.png",
     "scheme": "petadopt",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "backgroundColor": "#4F46E5",
       "resizeMode": "contain"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.petadopt.app"
+      "bundleIdentifier": "com.petadopt.app",
+      "newArchEnabled": false
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#4F46E5"
       },
-      "package": "com.petadopt.app"
+      "package": "com.petadopt.app",
+      "newArchEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
