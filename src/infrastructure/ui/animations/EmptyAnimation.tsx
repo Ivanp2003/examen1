@@ -1,7 +1,7 @@
 import LottieView from 'lottie-react-native';
 import { View } from 'react-native';
 
-export const EmptyAnimation = () => (
+const EmptyAnimation: React.FC = () => (
   <View className="items-center justify-center">
     <LottieView
       source={require('../../../../assets/animations/empty.json')}
@@ -11,3 +11,5 @@ export const EmptyAnimation = () => (
     />
   </View>
 );
+
+export default EmptyAnimation;

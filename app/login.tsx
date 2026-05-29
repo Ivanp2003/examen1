@@ -4,6 +4,7 @@ import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import LottieView from 'lottie-react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
 import { LoginUseCase, LoginWithGoogleUseCase } from '../src/application/use-cases/AuthUseCases';
 import { useAppStore } from '../src/application/store/useAppStore';
@@ -38,9 +39,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-  },
-  logoEmoji: {
-    fontSize: 40,
   },
   title: {
     fontSize: 32,
@@ -98,10 +96,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     marginBottom: 20,
-  },
-  inputIcon: {
-    fontSize: 20,
-    marginRight: 12,
   },
   input: {
     flex: 1,
@@ -249,7 +243,7 @@ export default function LoginScreen() {
                       <View>
                         <Text style={styles.label}>Correo electrónico</Text>
                         <View style={styles.inputContainer}>
-                          <Text style={styles.inputIcon}>📧</Text>
+                          <MaterialCommunityIcons name="email-outline" size={20} color="#6D597A" style={{ marginRight: 12 }} />
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
@@ -269,7 +263,7 @@ export default function LoginScreen() {
                       <View>
                         <Text style={styles.label}>Contraseña</Text>
                         <View style={styles.inputContainer}>
-                          <Text style={styles.inputIcon}>🔒</Text>
+                          <MaterialCommunityIcons name="lock-outline" size={20} color="#6D597A" style={{ marginRight: 12 }} />
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
@@ -279,14 +273,14 @@ export default function LoginScreen() {
                             style={styles.input}
                           />
                           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                            <Text style={styles.inputIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+                            <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6D597A" />
                           </TouchableOpacity>
                         </View>
                       </View>
                     )}
                   </Field>
 
-                  <TouchableOpacity style={styles.forgotPassword}>
+                  <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/auth/forgot')}>
                     <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
                   </TouchableOpacity>
 
@@ -343,7 +337,7 @@ export default function LoginScreen() {
                     activeOpacity={0.85}
                     style={styles.googleButton}
                   >
-                    <Text style={{ fontSize: 24 }}>🔷</Text>
+                    <MaterialCommunityIcons name="google" size={24} color="#6D597A" />
                     <Text style={styles.googleButtonText}>Continuar con Google</Text>
                   </TouchableOpacity>
                 </>

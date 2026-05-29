@@ -5,7 +5,7 @@ import { Pet } from '../../../domain/entities/Pet';
 import { SupabasePetRepository } from '../../repositories/SupabasePetRepository';
 import { GetAvailablePetsUseCase } from '../../../application/use-cases/PetUseCases';
 import { Button } from '../components/Button';
-import { PawAnimation } from '../animations/PawAnimation';
+import PawAnimation from '../animations/PawAnimation';
 
 const petRepo = new SupabasePetRepository();
 const getPets = new GetAvailablePetsUseCase(petRepo);
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export const PetDetailScreen = () => {
+const PetDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [pet, setPet] = useState<Pet | null>(null);
   const [loading, setLoading] = useState(true);
@@ -220,3 +220,5 @@ export const PetDetailScreen = () => {
     </ScrollView>
   );
 };
+
+export default PetDetailScreen;

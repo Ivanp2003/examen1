@@ -1,7 +1,12 @@
 import LottieView from 'lottie-react-native';
 import { View } from 'react-native';
 
-export const CatAnimation = ({ size = 120, loop = true }) => (
+interface CatAnimationProps {
+  size?: number;
+  loop?: boolean;
+}
+
+const CatAnimation: React.FC<CatAnimationProps> = ({ size = 120, loop = true }) => (
   <View className="items-center justify-center">
     <LottieView
       source={require('../../../../assets/animations/cat.json')}
@@ -11,3 +16,5 @@ export const CatAnimation = ({ size = 120, loop = true }) => (
     />
   </View>
 );
+
+export default CatAnimation;

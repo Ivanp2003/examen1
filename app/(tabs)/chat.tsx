@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../src/application/store/useAppStore';
 import { SupabaseAdoptionRepository } from '../../src/infrastructure/repositories/SupabaseAdoptionRepository';
 import { SupabasePetRepository } from '../../src/infrastructure/repositories/SupabasePetRepository';
@@ -135,7 +136,7 @@ export default function ChatRequestsScreen() {
   if (requests.length === 0) {
     return (
       <View style={styles.center}>
-        <Text style={styles.emptyIcon}>📋</Text>
+        <MaterialCommunityIcons name="chat-outline" size={48} color="#6D597A" style={{ marginBottom: 16 }} />
         <Text style={styles.emptyText}>No tienes solicitudes registradas en este momento.</Text>
       </View>
     );
@@ -164,7 +165,7 @@ export default function ChatRequestsScreen() {
                   <Image source={{ uri: mascota.image_url }} style={styles.petImage} />
                 ) : (
                   <View style={[styles.petImage, { backgroundColor: '#FFEEDD', justifyContent: 'center', alignItems: 'center' }]}>
-                    <Text>🐾</Text>
+                    <MaterialCommunityIcons name="paw" size={24} color="#F4A261" />
                   </View>
                 )}
                 <View style={styles.petInfo}>
@@ -194,9 +195,18 @@ export default function ChatRequestsScreen() {
               {isShelter && (
                 <View style={styles.metadataContainer}>
                   <Text style={styles.sectionLabel}>Datos del Solicitante:</Text>
-                  <Text style={styles.metaText}>🏠 Hogar: {metadata.homeType || 'No especificado'}</Text>
-                  <Text style={styles.metaText}>🐱 Otras mascotas: {metadata.hasPets ? 'Sí' : 'No'}</Text>
-                  <Text style={styles.metaText}>📝 Motivación: "{metadata.reason || item.notes || 'Sin comentarios adicionales'}"</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                    <MaterialCommunityIcons name="home-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
+                    <Text style={styles.metaText}> Hogar: {metadata.homeType || 'No especificado'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                    <MaterialCommunityIcons name="paw-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
+                    <Text style={styles.metaText}> Otras mascotas: {metadata.hasPets ? 'Sí' : 'No'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                    <MaterialCommunityIcons name="pencil-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
+                    <Text style={styles.metaText}> Motivación: "{metadata.reason || item.notes || 'Sin comentarios adicionales'}"</Text>
+                  </View>
                   
                   {item.status === 'pendiente' && (
                     <View style={styles.actions}>
@@ -221,9 +231,24 @@ export default function ChatRequestsScreen() {
               {!isShelter && (
                 <View style={styles.metadataContainer}>
                   <Text style={styles.metaText}>
-                    {item.status === 'pendiente' && "⏳ El refugio está evaluando tu perfil. Te notificaremos pronto."}
-                    {item.status === 'aprobado' && "🎉 ¡Felicidades! Tu solicitud fue aprobada. El refugio se contactará contigo."}
-                    {item.status === 'rechazado' && "❌ Lamentablemente la solicitud no fue aceptada esta vez."}
+                    {item.status === 'pendiente' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <MaterialCommunityIcons name="clock-outline" size={14} color="#B45309" style={{ marginRight: 4 }} />
+                        <Text style={styles.metaText}> El refugio está evaluando tu perfil. Te notificaremos pronto.</Text>
+                      </View>
+                    )}
+                    {item.status === 'aprobado' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <MaterialCommunityIcons name="emoticon-happy-outline" size={14} color="#065F46" style={{ marginRight: 4 }} />
+                        <Text style={styles.metaText}> ¡Felicidades! Tu solicitud fue aprobada. El refugio se contactará contigo.</Text>
+                      </View>
+                    )}
+                    {item.status === 'rechazado' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <MaterialCommunityIcons name="close-circle-outline" size={14} color="#991B1B" style={{ marginRight: 4 }} />
+                        <Text style={styles.metaText}> Lamentablemente la solicitud no fue aceptada esta vez.</Text>
+                      </View>
+                    )}
                   </Text>
                 </View>
               )}
@@ -264,10 +289,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: '#6D597A',
     fontSize: 16,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
   },
   emptyText: {
     fontSize: 16,

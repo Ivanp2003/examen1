@@ -1,8 +1,8 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
-import { LoadingAnimation } from '../animations/LoadingAnimation';
-import { EmptyAnimation } from '../animations/EmptyAnimation';
+import LoadingAnimation from '../animations/LoadingAnimation';
+import EmptyAnimation from '../animations/EmptyAnimation';
 import { useAppStore } from '../../../application/store/useAppStore';
 
 interface ChatPreview {
@@ -12,7 +12,7 @@ interface ChatPreview {
   time: string;
 }
 
-export const ChatListScreen = () => {
+const ChatListScreen = () => {
   const user = useAppStore((s) => s.user);
   const [chats, setChats] = useState<ChatPreview[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,3 +55,5 @@ export const ChatListScreen = () => {
     </View>
   );
 };
+
+export default ChatListScreen;

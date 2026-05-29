@@ -10,6 +10,11 @@ import { useAppStore } from '../src/application/store/useAppStore';
 import { oauthCallback } from '../src/infrastructure/api/oauthCallback';
 import '../global.css';
 
+console.log('_layout cargando...');
+console.log('GestureHandlerRootView:', typeof GestureHandlerRootView);
+console.log('StatusBar:', typeof StatusBar);
+console.log('Stack:', typeof Stack);
+
 WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
@@ -102,7 +107,9 @@ export default function RootLayout() {
         <Stack.Screen name="create-pet" />
         <Stack.Screen name="ai-chat" />
         <Stack.Screen name="adopt/[id]" />
+        <Stack.Screen name="auth/forgot" />
         <Stack.Screen name="auth/callback" />
+        <Stack.Screen name="auth/reset" />
       </Stack>
     </GestureHandlerRootView>
   );

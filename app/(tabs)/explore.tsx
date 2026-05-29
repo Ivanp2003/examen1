@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Alert, Platform, ToastAndroid } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { supabase } from '../../src/infrastructure/api/supabase';
+import { useAppStore } from '../../src/application/store/useAppStore';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface Shelter {
   id: string;
@@ -18,6 +20,25 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#FFF7ED',
+  },
+  saveButton: {
+    position: 'absolute',
+    top: 24,
+    right: 16,
+    backgroundColor: '#6D597A',
+    borderRadius: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13,
   },
   map: {
     flex: 1,
@@ -114,6 +135,27 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
+  const [pendingLocation, setPendingLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const user = useAppStore((s) => s.user);
+
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert('', message);
+    }
+  };
+
+  const isOnline = async (): Promise<boolean> => {
+    try {
+      // Endpoint de conectividad ligera (204)
+      await fetch('https://www.gstatic.com/generate_204', { method: 'GET' });
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   // Calcular distancia usando fórmula Haversine (en km)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -144,6 +186,61 @@ export default function ExploreScreen() {
   const clearSelection = () => {
     setSelectedShelter(null);
     setDistance(null);
+  };
+
+  const saveShelterLocation = async () => {
+    if (!user || user.role !== 'refugio') return;
+    const coords = pendingLocation || userLocation;
+    if (!coords) return;
+    const online = await isOnline();
+    if (!online) {
+      showToast('Sin conexión a Internet. Inténtalo nuevamente.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data: existing, error: selErr } = await supabase
+        .from('usuarios')
+        .select('metadata, nombre')
+        .eq('id', user.id)
+        .single();
+      if (selErr && selErr.code !== 'PGRST116') throw selErr;
+      const newMetadata = { ...(existing?.metadata || {}), latitude: coords.latitude, longitude: coords.longitude };
+      const { error: updErr } = await supabase
+        .from('usuarios')
+        .update({ metadata: newMetadata })
+        .eq('id', user.id);
+      if (updErr) throw updErr;
+
+      const me: Shelter = {
+        id: user.id,
+        nombre: existing?.nombre || user.nombre || 'Mi Refugio',
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        description: 'Mi refugio',
+      };
+      setShelters((prev) => {
+        const idx = prev.findIndex((s) => s.id === user.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = me;
+          return copy;
+        }
+        return [...prev, me];
+      });
+      setSelectedShelter(me);
+      if (userLocation) {
+        setDistance(calculateDistance(userLocation.latitude, userLocation.longitude, coords.latitude, coords.longitude));
+      }
+      setPendingLocation(null);
+      console.log('✅ Ubicación del refugio guardada');
+      showToast('Ubicación del refugio guardada');
+    } catch (e) {
+      console.error('❌ Error guardando ubicación del refugio:', e);
+      showToast('Error al guardar la ubicación');
+    } finally {
+      setSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -227,7 +324,17 @@ export default function ExploreScreen() {
         initialRegion={region}
         showsUserLocation
         showsMyLocationButton
+        onLongPress={(e) => setPendingLocation(e.nativeEvent.coordinate)}
       >
+        {/* Marcador pendiente del refugio (seleccionado por long-press) */}
+        {pendingLocation && (
+          <Marker
+            coordinate={pendingLocation}
+            title="Mi refugio (pendiente)"
+            description="Mantén pulsado para mover y luego guarda"
+            pinColor="#2E86DE"
+          />
+        )}
         {/* Marcador del usuario (azul) */}
         {userLocation && (
           <Marker
@@ -274,6 +381,26 @@ export default function ExploreScreen() {
           />
         ))}
       </MapView>
+
+      {user?.role === 'refugio' && (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={styles.saveButton}
+          onPress={saveShelterLocation}
+          disabled={saving || (!pendingLocation && !userLocation)}
+        >
+          {saving ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <MaterialCommunityIcons name="content-save-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.saveButtonText}>
+                {pendingLocation ? 'Guardar ubicación seleccionada' : 'Guardar mi ubicación actual'}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
 
       {/* Card de distancia */}
       {selectedShelter && distance !== null && (

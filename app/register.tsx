@@ -6,6 +6,7 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
 import LottieView from 'lottie-react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
 import { RegisterUseCase } from '../src/application/use-cases/AuthUseCases';
 
@@ -38,9 +39,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-  },
-  heroIconText: {
-    fontSize: 28,
   },
   heroTitle: {
     fontSize: 28,
@@ -96,10 +94,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFEDD5',
     borderColor: '#FED7AA',
   },
-  roleButtonIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
   roleButtonText: {
     fontSize: 14,
     fontWeight: '600',
@@ -129,10 +123,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
   },
-  inputIcon: {
-    fontSize: 18,
-    marginRight: 12,
-  },
   input: {
     flex: 1,
     paddingVertical: 16,
@@ -140,9 +130,6 @@ const styles = StyleSheet.create({
   },
   togglePassword: {
     marginLeft: 8,
-  },
-  togglePasswordText: {
-    fontSize: 18,
   },
   conditionalFields: {
     marginBottom: 16,
@@ -156,7 +143,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#6D597A',
-    marginBottom: 16,
   },
   conditionalInputContainer: {
     flexDirection: 'row',
@@ -274,7 +260,7 @@ export default function RegisterScreen() {
                     role === opt ? styles.roleButtonActive : styles.roleButtonInactive,
                   ]}
                 >
-                  <Text style={styles.roleButtonIcon}>{opt === 'adoptante' ? '❤️' : '🏠'}</Text>
+                    <MaterialCommunityIcons name={opt === 'adoptante' ? 'heart' : 'home'} size={20} color="#FFFFFF" />
                   <Text style={[
                     styles.roleButtonText,
                     role === opt ? styles.roleButtonTextActive : styles.roleButtonTextInactive,
@@ -294,7 +280,7 @@ export default function RegisterScreen() {
                       <View style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>Nombre completo</Text>
                         <View style={styles.inputContainer}>
-                          <Text style={styles.inputIcon}>👤</Text>
+                          <MaterialCommunityIcons name="account-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
@@ -313,7 +299,7 @@ export default function RegisterScreen() {
                       <View style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>Correo electrónico</Text>
                         <View style={styles.inputContainer}>
-                          <Text style={styles.inputIcon}>📧</Text>
+                          <MaterialCommunityIcons name="email-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
@@ -334,7 +320,7 @@ export default function RegisterScreen() {
                       <View style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>Contraseña</Text>
                         <View style={styles.inputContainer}>
-                          <Text style={styles.inputIcon}>🔒</Text>
+                          <MaterialCommunityIcons name="lock-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
@@ -344,7 +330,7 @@ export default function RegisterScreen() {
                             style={styles.input}
                           />
                           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.togglePassword}>
-                            <Text style={styles.togglePasswordText}>{showPassword ? '🙈' : '👁️'}</Text>
+                            <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color="#6D597A" />
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -357,7 +343,7 @@ export default function RegisterScreen() {
                       <View style={styles.fieldContainer}>
                         <Text style={styles.fieldLabel}>Confirmar contraseña</Text>
                         <View style={styles.inputContainer}>
-                          <Text style={styles.inputIcon}>🔐</Text>
+                          <MaterialCommunityIcons name="lock-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
@@ -367,7 +353,7 @@ export default function RegisterScreen() {
                             style={styles.input}
                           />
                           <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={styles.togglePassword}>
-                            <Text style={styles.togglePasswordText}>{showConfirm ? '🙈' : '👁️'}</Text>
+                            <MaterialCommunityIcons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={18} color="#6D597A" />
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -376,9 +362,12 @@ export default function RegisterScreen() {
 
                   {/* Campos condicionales según rol */}
                   <View style={styles.conditionalFields}>
-                    <Text style={styles.conditionalTitle}>
-                      {role === 'adoptante' ? '📋 Información del adoptante' : '🏠 Información del refugio'}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                      <MaterialCommunityIcons name={role === 'adoptante' ? 'clipboard-outline' : 'home-outline'} size={18} color="#6D597A" style={{ marginRight: 8 }} />
+                      <Text style={styles.conditionalTitle}>
+                        {role === 'adoptante' ? 'Información del adoptante' : 'Información del refugio'}
+                      </Text>
+                    </View>
 
                     {role === 'adoptante' ? (
                       <>
@@ -387,7 +376,7 @@ export default function RegisterScreen() {
                             <View style={styles.fieldContainer}>
                               <Text style={styles.fieldLabel}>Cédula / Identificación</Text>
                               <View style={styles.conditionalInputContainer}>
-                                <Text style={styles.inputIcon}>🪪</Text>
+                                <MaterialCommunityIcons name="credit-card-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                                 <TextInput
                                   value={field.state.value}
                                   onChangeText={(text) => field.handleChange(text)}
@@ -404,7 +393,7 @@ export default function RegisterScreen() {
                             <View style={styles.fieldContainer}>
                               <Text style={styles.fieldLabel}>Ocupación</Text>
                               <View style={styles.conditionalInputContainer}>
-                                <Text style={styles.inputIcon}>💼</Text>
+                                <MaterialCommunityIcons name="briefcase-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                                 <TextInput
                                   value={field.state.value}
                                   onChangeText={(text) => field.handleChange(text)}
@@ -424,7 +413,7 @@ export default function RegisterScreen() {
                             <View style={styles.fieldContainer}>
                               <Text style={styles.fieldLabel}>Dirección del refugio</Text>
                               <View style={styles.conditionalInputContainer}>
-                                <Text style={styles.inputIcon}>📍</Text>
+                                <MaterialCommunityIcons name="map-marker-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                                 <TextInput
                                   value={field.state.value}
                                   onChangeText={(text) => field.handleChange(text)}
@@ -441,7 +430,7 @@ export default function RegisterScreen() {
                             <View style={styles.fieldContainer}>
                               <Text style={styles.fieldLabel}>Teléfono de contacto</Text>
                               <View style={styles.conditionalInputContainer}>
-                                <Text style={styles.inputIcon}>📞</Text>
+                                <MaterialCommunityIcons name="phone-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                                 <TextInput
                                   value={field.state.value}
                                   onChangeText={(text) => field.handleChange(text)}

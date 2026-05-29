@@ -1,7 +1,8 @@
 import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AskGeminiUseCase } from '../../../application/use-cases/AskGeminiUseCase';
-import { LoadingAnimation } from '../animations/LoadingAnimation';
+import LoadingAnimation from '../animations/LoadingAnimation';
 
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
 const askGemini = new AskGeminiUseCase(API_KEY);
@@ -11,7 +12,7 @@ interface Message {
   isUser: boolean;
 }
 
-export const AIChatScreen = () => {
+const AIChatScreen = () => {
   const [messages, setMessages] = useState<Message[]>([
     { text: 'Hello! I am your PetAdopt AI assistant. How can I help you today?', isUser: false },
   ]);
@@ -59,9 +60,11 @@ export const AIChatScreen = () => {
           multiline
         />
         <TouchableOpacity onPress={handleSend} className="bg-primary w-14 h-14 rounded-full items-center justify-center">
-          <Text className="text-white text-2xl">➤</Text>
+          <MaterialCommunityIcons name="arrow-right" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
 };
+
+export default AIChatScreen;

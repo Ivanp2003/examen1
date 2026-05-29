@@ -1,7 +1,12 @@
 import LottieView from 'lottie-react-native';
 import { View } from 'react-native';
 
-export const PawAnimation = ({ size = 120, loop = true }) => (
+interface PawAnimationProps {
+  size?: number;
+  loop?: boolean;
+}
+
+const PawAnimation: React.FC<PawAnimationProps> = ({ size = 120, loop = true }) => (
   <View className="items-center justify-center">
     <LottieView
       source={require('../../../../assets/animations/paw.json')}
@@ -11,3 +16,5 @@ export const PawAnimation = ({ size = 120, loop = true }) => (
     />
   </View>
 );
+
+export default PawAnimation;

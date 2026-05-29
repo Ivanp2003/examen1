@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SuccessAnimation } from '../../src/infrastructure/ui/animations/SuccessAnimation';
+import SuccessAnimation from '../../src/infrastructure/ui/animations/SuccessAnimation';
 import { useAppStore } from '../../src/application/store/useAppStore';
 import { SupabaseAdoptionRepository } from '../../src/infrastructure/repositories/SupabaseAdoptionRepository';
 import { SupabasePetRepository } from '../../src/infrastructure/repositories/SupabasePetRepository';

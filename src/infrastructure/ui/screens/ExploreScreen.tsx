@@ -6,12 +6,12 @@ import { MapPreview } from '../components/MapView';
 import { Pet } from '../../../domain/entities/Pet';
 import { SupabasePetRepository } from '../../repositories/SupabasePetRepository';
 import { GetAvailablePetsUseCase } from '../../../application/use-cases/PetUseCases';
-import { CatAnimation } from '../animations/CatAnimation';
+import CatAnimation from '../animations/CatAnimation';
 
 const petRepo = new SupabasePetRepository();
 const getPets = new GetAvailablePetsUseCase(petRepo);
 
-export const ExploreScreen = () => {
+const ExploreScreen = () => {
   const [allPets, setAllPets] = useState<Pet[]>([]);
   const [query, setQuery] = useState('');
 
@@ -60,3 +60,5 @@ export const ExploreScreen = () => {
     </View>
   );
 };
+
+export default ExploreScreen;

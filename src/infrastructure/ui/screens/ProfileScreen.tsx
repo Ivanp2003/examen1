@@ -2,17 +2,18 @@ import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'rea
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../../application/store/useAppStore';
 import { SupabaseAuthRepository } from '../../repositories/SupabaseAuthRepository';
-import { DogAnimation } from '../animations/DogAnimation';
+import DogAnimation from '../animations/DogAnimation';
 
 const authRepo = new SupabaseAuthRepository();
 
 const menuItems = [
-  { label: 'Mis Mascotas', icon: '🐾', desc: 'Mascotas que has registrado', onPress: () => router.push('/(tabs)') },
-  { label: 'Solicitudes', icon: '📋', desc: 'Historial de solicitudes', onPress: () => router.push('/(tabs)/chat') },
-  { label: 'Asistente IA', icon: '🤖', desc: 'Consejos y recomendaciones', onPress: () => router.push('/ai-chat') },
-  { label: 'Configuración', icon: '⚙️', desc: 'Ajustes de la cuenta', onPress: () => router.push('/settings') },
+  { label: 'Mis Mascotas', icon: 'paw-outline' as const, desc: 'Mascotas que has registrado', onPress: () => router.push('/(tabs)') },
+  { label: 'Solicitudes', icon: 'chat-outline' as const, desc: 'Historial de solicitudes', onPress: () => router.push('/(tabs)/chat') },
+  { label: 'Asistente IA', icon: 'lightbulb-outline' as const, desc: 'Consejos y recomendaciones', onPress: () => router.push('/ai-chat') },
+  { label: 'Configuración', icon: 'cog-outline' as const, desc: 'Ajustes de la cuenta', onPress: () => router.push('/settings') },
 ];
 
 const styles = StyleSheet.create({
@@ -102,9 +103,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuIconText: {
-    fontSize: 24,
-  },
   menuInfo: {
     flex: 1,
     marginLeft: 16,
@@ -154,7 +152,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export const ProfileScreen = () => {
+const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const user = useAppStore((s) => s.user);
   const logout = useAppStore((s) => s.logout);
@@ -195,9 +193,12 @@ export const ProfileScreen = () => {
             </View>
             <Text style={styles.name}>{user?.nombre || 'Usuario'}</Text>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleBadgeText}>
-                {user?.role === 'refugio' ? '🏠 Refugio' : '❤️ Adoptante'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <MaterialCommunityIcons name={user?.role === 'refugio' ? 'home' : 'heart'} size={14} color="rgba(255,255,255,0.9)" style={{ marginRight: 4 }} />
+                <Text style={styles.roleBadgeText}>
+                  {user?.role === 'refugio' ? ' Refugio' : ' Adoptante'}
+                </Text>
+              </View>
             </View>
             <Text style={styles.email}>{user?.email}</Text>
           </View>
@@ -214,7 +215,7 @@ export const ProfileScreen = () => {
                 style={[styles.menuItem, i < menuItems.length - 1 && styles.menuItemBorder]}
               >
                 <View style={styles.menuIcon}>
-                  <Text style={styles.menuIconText}>{item.icon}</Text>
+                  <MaterialCommunityIcons name={item.icon} size={24} color="#6D597A" />
                 </View>
                 <View style={styles.menuInfo}>
                   <Text style={styles.menuLabel}>{item.label}</Text>
@@ -248,3 +249,5 @@ export const ProfileScreen = () => {
     </View>
   );
 };
+
+export default ProfileScreen;

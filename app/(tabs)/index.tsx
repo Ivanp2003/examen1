@@ -8,7 +8,7 @@ import { SupabasePetRepository } from '../../src/infrastructure/repositories/Sup
 import { GetAvailablePetsUseCase } from '../../src/application/use-cases/PetUseCases';
 import { useAppStore } from '../../src/application/store/useAppStore';
 import { PetCard } from '../../src/infrastructure/ui/components/PetCard';
-import { PawAnimation } from '../../src/infrastructure/ui/animations/PawAnimation';
+import PawAnimation from '../../src/infrastructure/ui/animations/PawAnimation';
 
 const { width } = Dimensions.get('window');
 
@@ -54,9 +54,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  logoText: {
-    fontSize: 24,
   },
   statsCard: {
     backgroundColor: '#FFFFFF',

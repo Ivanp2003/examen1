@@ -6,12 +6,12 @@ import {
 import { useForm } from '@tanstack/react-form';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PetSize, PetTag, PetStatus } from '../src/domain/entities/Pet';
 import { SupabasePetRepository } from '../src/infrastructure/repositories/SupabasePetRepository';
 import { CreatePetUseCase } from '../src/application/use-cases/PetUseCases';
 import { useAppStore } from '../src/application/store/useAppStore';
-import { DogAnimation } from '../src/infrastructure/ui/animations/DogAnimation';
+import DogAnimation from '../src/infrastructure/ui/animations/DogAnimation';
 
 const petRepo = new SupabasePetRepository();
 const createPet = new CreatePetUseCase(petRepo);
@@ -21,10 +21,10 @@ const TAGS: PetTag[] = [
   'independiente', 'protector', 'jugueton', 'entrenado',
 ];
 
-const SIZES: { key: PetSize; label: string; icon: string }[] = [
-  { key: 'P', label: 'Pequeño', icon: '🐕' },
-  { key: 'M', label: 'Mediano', icon: '🐕' },
-  { key: 'G', label: 'Grande', icon: '🐕' },
+const SIZES: { key: PetSize; label: string; icon: any }[] = [
+  { key: 'P' as PetSize, label: 'Pequeño', icon: 'paw-outline' },
+  { key: 'M' as PetSize, label: 'Mediano', icon: 'paw-outline' },
+  { key: 'G' as PetSize, label: 'Grande', icon: 'paw-outline' },
 ];
 
 const styles = StyleSheet.create({
@@ -63,9 +63,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-  },
-  heroIconText: {
-    fontSize: 36,
   },
   heroTitle: {
     fontSize: 32,
@@ -132,9 +129,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-  photoIconText: {
-    fontSize: 28,
-  },
   photoText: {
     color: '#6D597A',
     fontWeight: '500',
@@ -165,10 +159,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     marginBottom: 20,
-  },
-  inputIcon: {
-    fontSize: 18,
-    marginRight: 12,
   },
   input: {
     flex: 1,
@@ -214,10 +204,6 @@ const styles = StyleSheet.create({
   sizeButtonInactive: {
     backgroundColor: '#F8F9FA',
     borderColor: '#E8E8E8',
-  },
-  sizeIcon: {
-    fontSize: 20,
-    marginBottom: 4,
   },
   sizeText: {
     fontWeight: '600',
@@ -279,11 +265,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     marginBottom: 24,
-  },
-  textareaIcon: {
-    fontSize: 18,
-    marginTop: 16,
-    marginRight: 12,
   },
   textarea: {
     flex: 1,
@@ -403,7 +384,7 @@ export default function CreatePetScreen() {
         <View style={styles.hero}>
           <View style={styles.heroContent}>
             <View style={styles.heroIcon}>
-              <Text style={styles.heroIconText}>📝</Text>
+              <MaterialCommunityIcons name="pencil-outline" size={36} color="#FFFFFF" />
             </View>
             <Text style={styles.heroTitle}>Registrar Mascota</Text>
             <Text style={styles.heroSubtitle}>
@@ -428,7 +409,7 @@ export default function CreatePetScreen() {
                     ) : (
                       <View style={styles.photoPlaceholder}>
                         <View style={styles.photoIcon}>
-                          <Text style={styles.photoIconText}>📷</Text>
+                          <MaterialCommunityIcons name="camera-outline" size={28} color="#6D597A" />
                         </View>
                         <Text style={styles.photoText}>Agregar foto</Text>
                         <Text style={styles.photoSubtext}>Toca para seleccionar</Text>
@@ -442,7 +423,7 @@ export default function CreatePetScreen() {
                       <View>
                         <Text style={styles.label}>Nombre *</Text>
                         <View style={styles.inputContainer}>
-                          <Text style={styles.inputIcon}>📛</Text>
+                          <MaterialCommunityIcons name="tag-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                           <TextInput
                             value={f.state.value}
                             onChangeText={(t) => f.handleChange(t)}
@@ -463,7 +444,7 @@ export default function CreatePetScreen() {
                           <View>
                             <Text style={styles.label}>Especie *</Text>
                             <View style={styles.inputContainer}>
-                              <Text style={styles.inputIcon}>🐾</Text>
+                              <MaterialCommunityIcons name="paw-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                               <TextInput
                                 value={f.state.value}
                                 onChangeText={(t) => f.handleChange(t)}
@@ -482,7 +463,7 @@ export default function CreatePetScreen() {
                           <View>
                             <Text style={styles.label}>Raza</Text>
                             <View style={styles.inputContainer}>
-                              <Text style={styles.inputIcon}>🧬</Text>
+                              <MaterialCommunityIcons name="source-branch" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                               <TextInput
                                 value={f.state.value}
                                 onChangeText={(t) => f.handleChange(t)}
@@ -503,7 +484,7 @@ export default function CreatePetScreen() {
                       <View>
                         <Text style={styles.label}>Edad (años) *</Text>
                         <View style={styles.inputContainer}>
-                          <Text style={styles.inputIcon}>🎂</Text>
+                          <MaterialCommunityIcons name="calendar-outline" size={18} color="#6D597A" style={{ marginRight: 12 }} />
                           <TextInput
                             value={f.state.value}
                             onChangeText={(t) => f.handleChange(t)}
@@ -532,7 +513,7 @@ export default function CreatePetScreen() {
                               f.state.value === s.key ? styles.sizeButtonActive : styles.sizeButtonInactive
                             ]}
                           >
-                            <Text style={styles.sizeIcon}>{s.icon}</Text>
+                            <MaterialCommunityIcons name={s.icon} size={20} color={f.state.value === s.key ? '#FFFFFF' : '#6D597A'} />
                             <Text style={[
                               styles.sizeText,
                               f.state.value === s.key ? styles.sizeTextActive : styles.sizeTextInactive
@@ -577,7 +558,7 @@ export default function CreatePetScreen() {
                       <View>
                         <Text style={styles.label}>Descripción</Text>
                         <View style={styles.textareaContainer}>
-                          <Text style={styles.textareaIcon}>📖</Text>
+                          <MaterialCommunityIcons name="book-outline" size={18} color="#6D597A" style={{ marginTop: 16, marginRight: 12 }} />
                           <TextInput
                             value={f.state.value}
                             onChangeText={(t) => f.handleChange(t)}

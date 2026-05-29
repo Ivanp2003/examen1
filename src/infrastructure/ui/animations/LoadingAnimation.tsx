@@ -1,7 +1,7 @@
 import LottieView from 'lottie-react-native';
 import { View } from 'react-native';
 
-export const LoadingAnimation = () => (
+const LoadingAnimation: React.FC = () => (
   <View className="items-center justify-center">
     <LottieView
       source={require('../../../../assets/animations/loading.json')}
@@ -11,3 +11,5 @@ export const LoadingAnimation = () => (
     />
   </View>
 );
+
+export default LoadingAnimation;

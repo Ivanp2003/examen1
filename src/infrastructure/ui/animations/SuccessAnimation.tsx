@@ -1,7 +1,7 @@
 import LottieView from 'lottie-react-native';
 import { View } from 'react-native';
 
-export const SuccessAnimation = () => (
+const SuccessAnimation: React.FC = () => (
   <View className="items-center justify-center">
     <LottieView
       source={require('../../../../assets/animations/success.json')}
@@ -11,3 +11,5 @@ export const SuccessAnimation = () => (
     />
   </View>
 );
+
+export default SuccessAnimation;

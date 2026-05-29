@@ -1,11 +1,12 @@
 import { Tabs } from 'expo-router';
-import { Text, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const tabs = [
-  { name: 'index', title: 'Inicio', icon: '🏠' },
-  { name: 'explore', title: 'Explorar', icon: '🗺️' },
-  { name: 'chat', title: 'Solicitudes', icon: '📋' },
-  { name: 'profile', title: 'Perfil', icon: '👤' },
+  { name: 'index', title: 'Inicio', icon: 'home-outline' as const },
+  { name: 'explore', title: 'Explorar', icon: 'compass-outline' as const },
+  { name: 'chat', title: 'Solicitudes', icon: 'chat-outline' as const },
+  { name: 'profile', title: 'Perfil', icon: 'account-outline' as const },
 ];
 
 const styles = StyleSheet.create({
@@ -28,9 +29,7 @@ const styles = StyleSheet.create({
   iconContainerFocused: {
     backgroundColor: 'rgba(244, 162, 97, 0.15)',
   },
-  icon: {
-    fontSize: 20,
-  },
+
 });
 
 export default function TabLayout() {
@@ -53,7 +52,7 @@ export default function TabLayout() {
             title: tab.title,
             tabBarIcon: ({ focused }) => (
               <View style={[styles.iconContainer, focused && styles.iconContainerFocused]}>
-                <Text style={[styles.icon, { opacity: focused ? 1 : 0.6 }]}>{tab.icon}</Text>
+                <MaterialCommunityIcons name={tab.icon} size={22} color={focused ? '#F4A261' : '#94A3B8'} />
               </View>
             ),
           }}

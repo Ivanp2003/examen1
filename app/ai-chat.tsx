@@ -1,7 +1,8 @@
 import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { askGemini } from '../src/infrastructure/api/deepseek';
-import { LoadingAnimation } from '../src/infrastructure/ui/animations/LoadingAnimation';
+import LoadingAnimation from '../src/infrastructure/ui/animations/LoadingAnimation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 
@@ -376,7 +377,7 @@ export default function AIChatScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Text style={{ fontSize: 48 }}>🤖</Text>
+      <MaterialCommunityIcons name="lightbulb-outline" size={48} color="#6D597A" />
       <Text style={styles.emptyTitle}>Asistente de IA PetAdopt</Text>
       <Text style={styles.emptySubtitle}>
         Tu experto 24/7 en salud, nutrición y comportamiento animal.{'\n'}
