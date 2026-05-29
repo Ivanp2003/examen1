@@ -29,13 +29,31 @@ export default function RootLayout() {
 
         if (profileError) {
           console.error('❌ Error obteniendo perfil:', profileError);
+          
+          // Si el perfil no existe, crearlo
+          if (profileError.code === 'PGRST116') {
+            console.log('📝 Usuario no existe en tabla usuarios, creando perfil...');
+            const { error: insertError } = await supabase.from('usuarios').insert({
+              id: session.user.id,
+              email: session.user.email,
+              nombre: session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || 'Usuario',
+              role: session.user.user_metadata?.role || 'adoptante',
+              metadata: session.user.user_metadata || {},
+            });
+
+            if (insertError) {
+              console.error('❌ Error creando perfil:', insertError);
+            } else {
+              console.log('✅ Perfil creado exitosamente');
+            }
+          }
         }
 
         // Forzar la actualización del usuario en el store global
         setUser({
           id: session.user.id,
           email: session.user.email || '',
-          role: profile?.role || 'adoptante',
+          role: profile?.role || session.user.user_metadata?.role || 'adoptante',
           nombre: profile?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || 'Usuario',
           metadata: profile?.metadata || session.user.user_metadata || {},
           created_at: profile?.created_at || session.user.created_at,
