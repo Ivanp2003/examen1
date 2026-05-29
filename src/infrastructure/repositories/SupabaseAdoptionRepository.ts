@@ -4,12 +4,17 @@ import { supabase } from '../api/supabase';
 
 export class SupabaseAdoptionRepository implements IAdoptionRepository {
   async submitRequest(request: Omit<AdoptionRequest, 'created_at' | 'id'>): Promise<AdoptionRequest> {
+    console.log('📝 Enviando solicitud de adopción:', request);
     const { data, error } = await supabase
       .from('solicitudes')
       .insert({ ...request, status: 'pendiente' })
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error enviando solicitud:', error);
+      throw error;
+    }
+    console.log('✅ Solicitud enviada exitosamente:', data);
     return data as AdoptionRequest;
   }
 

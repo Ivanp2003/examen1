@@ -1,27 +1,151 @@
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, ActivityIndicator, TextInput, StyleSheet } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SuccessAnimation } from '../../src/infrastructure/ui/animations/SuccessAnimation';
 import { useAppStore } from '../../src/application/store/useAppStore';
 import { SupabaseAdoptionRepository } from '../../src/infrastructure/repositories/SupabaseAdoptionRepository';
 import { SupabasePetRepository } from '../../src/infrastructure/repositories/SupabasePetRepository';
 import { Pet } from '../../src/domain/entities/Pet';
+import { AdoptionStatus } from '../../src/domain/entities/AdoptionRequest';
 
 const adoptionRepo = new SupabaseAdoptionRepository();
 const petRepo = new SupabasePetRepository();
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+  },
+  successContainer: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successTitle: {
+    color: '#10B981',
+    fontWeight: '600',
+    fontSize: 18,
+    marginTop: 16,
+  },
+  successSubtitle: {
+    color: '#94A3B8',
+    marginTop: 8,
+  },
+  successButton: {
+    marginTop: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    backgroundColor: '#F4A261',
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  successButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  scrollView: {
+    paddingHorizontal: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#6D597A',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#94A3B8',
+    marginBottom: 24,
+  },
+  fieldContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6D597A',
+    marginBottom: 8,
+  },
+  input: {
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    borderRadius: 12,
+    color: '#6D597A',
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  inputLarge: {
+    minHeight: 100,
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  optionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  optionButtonActive: {
+    backgroundColor: '#F4A261',
+    borderColor: '#F4A261',
+  },
+  optionButtonInactive: {
+    backgroundColor: '#F8F9FA',
+    borderColor: '#E8E8E8',
+  },
+  optionText: {
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  optionTextActive: {
+    color: '#FFFFFF',
+  },
+  optionTextInactive: {
+    color: '#6D597A',
+  },
+  submitButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    backgroundColor: '#F4A261',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F4A261',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+});
 
 export default function AdoptScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAppStore((s) => s.user);
   const [pet, setPet] = useState<Pet | null>(null);
   const [success, setSuccess] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
+    console.log('🔍 useEffect ejecutado con id:', id);
     if (!id) return;
     (async () => {
+      console.log('📦 Obteniendo todas las mascotas...');
       const all = await petRepo.getAllPets();
+      console.log('🐾 Mascotas obtenidas:', all);
       const found = all.find((p) => p.id === id);
+      console.log('🎯 Mascota encontrada:', found);
       if (found) setPet(found);
     })();
   }, [id]);
@@ -34,9 +158,27 @@ export default function AdoptScreen() {
       motivo: '',
     },
     onSubmit: async ({ value }) => {
-      if (!user || !pet) return;
+      console.log('🔘 Botón enviar presionado');
+      console.log('👤 Usuario:', user);
+      console.log('🐾 Mascota:', pet);
+      console.log('🆔 Pet ID:', id);
+      
+      if (!user) {
+        console.error('❌ Usuario no autenticado');
+        Alert.alert('Error', 'Debes iniciar sesión para enviar una solicitud de adopción.');
+        router.replace('/login');
+        return;
+      }
+      
+      if (!pet) {
+        console.error('❌ Mascota no encontrada');
+        Alert.alert('Error', 'No se encontró la mascota. Intenta nuevamente.');
+        return;
+      }
+      
       try {
-        await adoptionRepo.submitRequest({
+        console.log('📦 Datos del formulario:', value);
+        const requestData = {
           pet_id: id!,
           applicant_id: user.id,
           shelter_id: pet.shelter_id,
@@ -47,10 +189,15 @@ export default function AdoptScreen() {
             tiene_espacio: value.hogar === 'casa',
             otros_mascotas: value.otros_mascotas,
           },
-          status: 'pendiente',
-        });
+          status: 'pendiente' as AdoptionStatus,
+        };
+        console.log('📝 Enviando solicitud:', requestData);
+        
+        await adoptionRepo.submitRequest(requestData);
+        console.log('✅ Solicitud enviada, cambiando a success');
         setSuccess(true);
       } catch (err: any) {
+        console.error('❌ Error en onSubmit:', err);
         Alert.alert('Error', err.message || 'No se pudo enviar la solicitud.');
       }
     },
@@ -60,16 +207,16 @@ export default function AdoptScreen() {
 
   if (success) {
     return (
-      <View className="flex-1 bg-background items-center justify-center">
+      <View style={styles.successContainer}>
         <SuccessAnimation />
-        <Text className="text-success font-semibold text-lg mt-4">¡Solicitud enviada!</Text>
-        <Text className="text-text-secondary mt-2">El refugio revisará tu solicitud</Text>
-        <View className="mt-6">
+        <Text style={styles.successTitle}>¡Solicitud enviada!</Text>
+        <Text style={styles.successSubtitle}>El refugio revisará tu solicitud</Text>
+        <View>
           <TouchableOpacity
             onPress={() => router.replace('/(tabs)')}
-            className="py-4 px-6 rounded-2xl bg-primary items-center"
+            style={styles.successButton}
           >
-            <Text className="font-semibold text-base text-white">Volver al inicio</Text>
+            <Text style={styles.successButtonText}>Volver al inicio</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -77,10 +224,10 @@ export default function AdoptScreen() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="p-6" keyboardShouldPersistTaps="handled">
-        <Text className="text-3xl font-bold text-text mb-2">Solicitar Adopción</Text>
-        <Text className="text-text-secondary mb-6">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <ScrollView contentContainerStyle={[styles.scrollView, { paddingTop: insets.top + 16 }]} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Solicitar Adopción</Text>
+        <Text style={styles.subtitle}>
           {pet ? `Solicitando a: ${pet.name}` : 'Cargando...'}
         </Text>
 
@@ -89,15 +236,15 @@ export default function AdoptScreen() {
             <>
               <Field name="experiencia">
                 {(field) => (
-                  <View className="mb-4">
-                    <Text className="text-sm font-medium text-text mb-2">Experiencia con mascotas</Text>
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Experiencia con mascotas</Text>
                     <TextInput
                       value={field.state.value}
                       onChangeText={(text) => field.handleChange(text)}
                       placeholder="¿Has tenido mascotas antes? Cuéntanos..."
                       placeholderTextColor="#94A3B8"
                       multiline
-                      className="p-4 bg-gray-50 border border-gray-200 rounded-xl text-text min-h-[80px]"
+                      style={styles.input}
                     />
                   </View>
                 )}
@@ -105,24 +252,22 @@ export default function AdoptScreen() {
 
               <Field name="hogar">
                 {(field) => (
-                  <View className="mb-4">
-                    <Text className="text-sm font-medium text-text mb-2">Tipo de hogar</Text>
-                    <View className="flex-row gap-3">
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Tipo de hogar</Text>
+                    <View style={styles.optionsRow}>
                       {['casa', 'departamento'].map((opt) => (
                         <TouchableOpacity
                           key={opt}
                           onPress={() => field.handleChange(opt)}
-                          className={`flex-1 py-3 px-4 rounded-xl border items-center ${
-                            field.state.value === opt
-                              ? 'bg-primary border-primary'
-                              : 'bg-gray-50 border-gray-200'
-                          }`}
+                          style={[
+                            styles.optionButton,
+                            field.state.value === opt ? styles.optionButtonActive : styles.optionButtonInactive
+                          ]}
                         >
-                          <Text
-                            className={`font-medium ${
-                              field.state.value === opt ? 'text-white' : 'text-text'
-                            }`}
-                          >
+                          <Text style={[
+                            styles.optionText,
+                            field.state.value === opt ? styles.optionTextActive : styles.optionTextInactive
+                          ]}>
                             {opt === 'casa' ? 'Casa' : 'Departamento'}
                           </Text>
                         </TouchableOpacity>
@@ -134,9 +279,9 @@ export default function AdoptScreen() {
 
               <Field name="otros_mascotas">
                 {(field) => (
-                  <View className="mb-4">
-                    <Text className="text-sm font-medium text-text mb-2">¿Tienes otras mascotas?</Text>
-                    <View className="flex-row gap-3">
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>¿Tienes otras mascotas?</Text>
+                    <View style={styles.optionsRow}>
                       {[
                         { label: 'Sí', value: true },
                         { label: 'No', value: false },
@@ -144,17 +289,15 @@ export default function AdoptScreen() {
                         <TouchableOpacity
                           key={opt.label}
                           onPress={() => field.handleChange(opt.value)}
-                          className={`flex-1 py-3 px-4 rounded-xl border items-center ${
-                            field.state.value === opt.value
-                              ? 'bg-primary border-primary'
-                              : 'bg-gray-50 border-gray-200'
-                          }`}
+                          style={[
+                            styles.optionButton,
+                            field.state.value === opt.value ? styles.optionButtonActive : styles.optionButtonInactive
+                          ]}
                         >
-                          <Text
-                            className={`font-medium ${
-                              field.state.value === opt.value ? 'text-white' : 'text-text'
-                            }`}
-                          >
+                          <Text style={[
+                            styles.optionText,
+                            field.state.value === opt.value ? styles.optionTextActive : styles.optionTextInactive
+                          ]}>
                             {opt.label}
                           </Text>
                         </TouchableOpacity>
@@ -166,15 +309,15 @@ export default function AdoptScreen() {
 
               <Field name="motivo">
                 {(field) => (
-                  <View className="mb-6">
-                    <Text className="text-sm font-medium text-text mb-2">Motivación</Text>
+                  <View style={styles.fieldContainer}>
+                    <Text style={styles.label}>Motivación</Text>
                     <TextInput
                       value={field.state.value}
                       onChangeText={(text) => field.handleChange(text)}
                       placeholder="¿Por qué deseas adoptar a esta mascota?"
                       placeholderTextColor="#94A3B8"
                       multiline
-                      className="p-4 bg-gray-50 border border-gray-200 rounded-xl text-text min-h-[100px]"
+                      style={[styles.input, styles.inputLarge]}
                     />
                   </View>
                 )}
@@ -183,10 +326,10 @@ export default function AdoptScreen() {
               <TouchableOpacity
                 onPress={() => form.handleSubmit()}
                 disabled={isSubmitting}
-                className="py-4 px-6 rounded-2xl bg-primary border border-primary items-center justify-center flex-row"
+                style={styles.submitButton}
               >
-                {isSubmitting && <ActivityIndicator color="white" className="mr-2" />}
-                <Text className="font-semibold text-base text-white">Enviar Solicitud</Text>
+                {isSubmitting && <ActivityIndicator color="white" style={{ marginRight: 8 }} />}
+                <Text style={styles.submitButtonText}>Enviar Solicitud</Text>
               </TouchableOpacity>
             </>
           )}

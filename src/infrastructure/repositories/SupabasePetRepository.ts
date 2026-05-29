@@ -19,12 +19,17 @@ export class SupabasePetRepository implements IPetRepository {
   }
 
   async createPet(pet: Omit<Pet, 'id' | 'created_at'>): Promise<Pet> {
+    console.log('🐾 Creando mascota con shelter_id:', pet.shelter_id);
     const { data, error } = await supabase
       .from('mascotas')
       .insert(pet)
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error al crear mascota:', error);
+      throw error;
+    }
+    console.log('✅ Mascota creada:', data);
     return data as Pet;
   }
 

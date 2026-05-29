@@ -1,11 +1,5 @@
 import { create } from 'zustand';
-
-interface User {
-  id: string;
-  email: string;
-  role: 'refugio' | 'adoptante';
-  nombre: string;
-}
+import { User } from '../../domain/entities/User';
 
 interface AppState {
   user: User | null;

@@ -8,10 +8,10 @@ import { SupabaseAuthRepository } from '../../repositories/SupabaseAuthRepositor
 const authRepo = new SupabaseAuthRepository();
 
 const menuItems = [
-  { label: 'Mis Mascotas', icon: '🐾', desc: 'Mascotas que has registrado', onPress: () => {} },
+  { label: 'Mis Mascotas', icon: '🐾', desc: 'Mascotas que has registrado', onPress: () => router.push('/(tabs)') },
   { label: 'Solicitudes', icon: '📋', desc: 'Historial de solicitudes', onPress: () => router.push('/(tabs)/chat') },
   { label: 'Asistente IA', icon: '🤖', desc: 'Consejos y recomendaciones', onPress: () => router.push('/ai-chat') },
-  { label: 'Configuración', icon: '⚙️', desc: 'Ajustes de la cuenta', onPress: () => {} },
+  { label: 'Configuración', icon: '⚙️', desc: 'Ajustes de la cuenta', onPress: () => router.push('/settings') },
 ];
 
 const styles = StyleSheet.create({

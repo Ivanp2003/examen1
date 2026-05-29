@@ -1,19 +1,17 @@
 import { useState } from 'react';
 import {
   View, Text, ScrollView, KeyboardAvoidingView, Platform,
-  Alert, TextInput, TouchableOpacity, Image, ActivityIndicator, Dimensions,
+  Alert, TextInput, TouchableOpacity, Image, ActivityIndicator, Dimensions, StyleSheet,
 } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import LottieView from 'lottie-react-native';
 
-import { PetSize, PetTag } from '../src/domain/entities/Pet';
+import { PetSize, PetTag, PetStatus } from '../src/domain/entities/Pet';
 import { SupabasePetRepository } from '../src/infrastructure/repositories/SupabasePetRepository';
 import { CreatePetUseCase } from '../src/application/use-cases/PetUseCases';
 import { useAppStore } from '../src/application/store/useAppStore';
-
-const { width } = Dimensions.get('window');
 
 const petRepo = new SupabasePetRepository();
 const createPet = new CreatePetUseCase(petRepo);
@@ -28,6 +26,304 @@ const SIZES: { key: PetSize; label: string; icon: string }[] = [
   { key: 'M', label: 'Mediano', icon: '🐕' },
   { key: 'G', label: 'Grande', icon: '🐕' },
 ];
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+  },
+  successContainer: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successText: {
+    color: '#10B981',
+    fontWeight: '600',
+    fontSize: 18,
+    marginTop: 16,
+  },
+  hero: {
+    backgroundColor: '#F4A261',
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 64,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+  },
+  heroContent: {
+    alignItems: 'center',
+  },
+  heroIcon: {
+    width: 80,
+    height: 80,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  heroIconText: {
+    fontSize: 36,
+  },
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  heroSubtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  formContainer: {
+    paddingHorizontal: 24,
+    marginTop: -32,
+  },
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#F1F3F5',
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#6D597A',
+    marginBottom: 4,
+  },
+  formSubtitle: {
+    color: '#94A3B8',
+    fontSize: 14,
+    marginBottom: 24,
+  },
+  photoButton: {
+    width: '100%',
+    height: 192,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#E8E8E8',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  photoPlaceholder: {
+    alignItems: 'center',
+  },
+  photoIcon: {
+    width: 64,
+    height: 64,
+    backgroundColor: 'rgba(244, 162, 97, 0.1)',
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  photoIconText: {
+    fontSize: 28,
+  },
+  photoText: {
+    color: '#6D597A',
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  photoSubtext: {
+    color: '#94A3B8',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6D597A',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  inputIcon: {
+    fontSize: 18,
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 16,
+    color: '#6D597A',
+    fontSize: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  rowItem: {
+    flex: 1,
+  },
+  sizeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6D597A',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  sizeContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 12,
+  },
+  sizeButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  sizeButtonActive: {
+    backgroundColor: '#F4A261',
+    borderColor: '#F4A261',
+    shadowColor: '#F4A261',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sizeButtonInactive: {
+    backgroundColor: '#F8F9FA',
+    borderColor: '#E8E8E8',
+  },
+  sizeIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  sizeText: {
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  sizeTextActive: {
+    color: '#FFFFFF',
+  },
+  sizeTextInactive: {
+    color: '#6D597A',
+  },
+  tagsLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6D597A',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+    gap: 8,
+  },
+  tagButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  tagButtonActive: {
+    backgroundColor: '#F4A261',
+    borderColor: '#F4A261',
+    shadowColor: '#F4A261',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tagButtonInactive: {
+    backgroundColor: '#F8F9FA',
+    borderColor: '#E8E8E8',
+  },
+  tagText: {
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  tagTextActive: {
+    color: '#FFFFFF',
+  },
+  tagTextInactive: {
+    color: '#6D597A',
+  },
+  textareaContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  textareaIcon: {
+    fontSize: 18,
+    marginTop: 16,
+    marginRight: 12,
+  },
+  textarea: {
+    flex: 1,
+    paddingVertical: 16,
+    color: '#6D597A',
+    fontSize: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  submitButton: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#F4A261',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    shadowColor: '#F4A261',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitButtonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  footer: {
+    alignItems: 'center',
+    marginTop: 32,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
+  footerText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+});
 
 export default function CreatePetScreen() {
   const user = useAppStore((s) => s.user);
@@ -49,10 +345,13 @@ export default function CreatePetScreen() {
       if (!user) { Alert.alert('Error', 'Debes iniciar sesión.'); return; }
       if (!imageUri) { Alert.alert('Error', 'Selecciona una foto de la mascota.'); return; }
 
+      console.log('👤 Usuario actual:', user);
+      console.log('🆔 User ID:', user.id);
+
       setUploading(true);
       try {
         const imageUrl = await petRepo.uploadPetImage(imageUri);
-        await createPet.execute({
+        const petData = {
           name: value.name,
           species: value.species,
           breed: value.breed,
@@ -62,11 +361,14 @@ export default function CreatePetScreen() {
           tags: value.tags,
           images: [imageUrl],
           shelter_id: user.id,
-          status: 'disponible',
-        });
+          status: 'disponible' as PetStatus,
+        };
+        console.log('📦 Datos a insertar:', petData);
+        await createPet.execute(petData);
         setSuccess(true);
         setTimeout(() => router.back(), 2000);
       } catch (err: any) {
+        console.error('❌ Error completo:', err);
         Alert.alert('Error', err.message || 'No se pudo registrar la mascota.');
       } finally {
         setUploading(false);
@@ -87,52 +389,52 @@ export default function CreatePetScreen() {
 
   if (success) {
     return (
-      <View className="flex-1 bg-background items-center justify-center">
+      <View style={styles.successContainer}>
         <LottieView
           source={require('../assets/animations/success.json')}
           autoPlay loop={false} style={{ width: 120, height: 120 }}
         />
-        <Text className="text-success font-semibold text-lg mt-4">¡Mascota registrada!</Text>
+        <Text style={styles.successText}>¡Mascota registrada!</Text>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="flex-grow" keyboardShouldPersistTaps="handled" bounces={false}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" bounces={false}>
         {/* Hero Section */}
-        <View className="bg-primary px-6 pt-20 pb-16 rounded-b-[40px]">
-          <View className="items-center">
-            <View className="w-20 h-20 bg-white/20 rounded-2xl items-center justify-center mb-4">
-              <Text className="text-4xl">📝</Text>
+        <View style={styles.hero}>
+          <View style={styles.heroContent}>
+            <View style={styles.heroIcon}>
+              <Text style={styles.heroIconText}>📝</Text>
             </View>
-            <Text className="text-4xl font-bold text-white tracking-tight">Registrar Mascota</Text>
-            <Text className="text-white/80 text-base mt-2 text-center max-w-xs">
+            <Text style={styles.heroTitle}>Registrar Mascota</Text>
+            <Text style={styles.heroSubtitle}>
               Completa los datos para publicarla y encontrarle un hogar
             </Text>
           </View>
         </View>
 
         {/* Form Section */}
-        <View className="px-6 -mt-8">
-          <View className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-            <Text className="text-2xl font-bold text-text mb-1">Información</Text>
-            <Text className="text-text-secondary text-sm mb-6">Todos los campos con * son obligatorios</Text>
+        <View style={styles.formContainer}>
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Información</Text>
+            <Text style={styles.formSubtitle}>Todos los campos con * son obligatorios</Text>
 
             <form.Subscribe selector={(s) => s.isSubmitting}>
               {(isSubmitting) => (
                 <>
                   {/* Foto */}
-                  <TouchableOpacity onPress={pickImage} className="w-full h-48 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 items-center justify-center mb-6 overflow-hidden">
+                  <TouchableOpacity onPress={pickImage} style={styles.photoButton}>
                     {imageUri ? (
-                      <Image source={{ uri: imageUri }} className="w-full h-full" resizeMode="cover" />
+                      <Image source={{ uri: imageUri }} style={styles.photoImage} resizeMode="cover" />
                     ) : (
-                      <View className="items-center">
-                        <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-2">
-                          <Text className="text-3xl">📷</Text>
+                      <View style={styles.photoPlaceholder}>
+                        <View style={styles.photoIcon}>
+                          <Text style={styles.photoIconText}>📷</Text>
                         </View>
-                        <Text className="text-text-secondary font-medium">Agregar foto</Text>
-                        <Text className="text-text-secondary/60 text-xs mt-1">Toca para seleccionar</Text>
+                        <Text style={styles.photoText}>Agregar foto</Text>
+                        <Text style={styles.photoSubtext}>Toca para seleccionar</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -140,16 +442,16 @@ export default function CreatePetScreen() {
                   {/* Nombre */}
                   <Field name="name">
                     {(f) => (
-                      <View className="mb-5">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Nombre *</Text>
-                        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mr-3">📛</Text>
+                      <View>
+                        <Text style={styles.label}>Nombre *</Text>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputIcon}>📛</Text>
                           <TextInput
                             value={f.state.value}
                             onChangeText={(t) => f.handleChange(t)}
                             placeholder="Max"
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text"
+                            style={styles.input}
                           />
                         </View>
                       </View>
@@ -157,39 +459,39 @@ export default function CreatePetScreen() {
                   </Field>
 
                   {/* Especie & Raza row */}
-                  <View className="flex-row gap-4">
-                    <View className="flex-1">
+                  <View style={styles.row}>
+                    <View style={styles.rowItem}>
                       <Field name="species">
                         {(f) => (
-                          <View className="mb-5">
-                            <Text className="text-sm font-semibold text-text mb-2 ml-1">Especie *</Text>
-                            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                              <Text className="text-lg mr-3">🐾</Text>
+                          <View>
+                            <Text style={styles.label}>Especie *</Text>
+                            <View style={styles.inputContainer}>
+                              <Text style={styles.inputIcon}>🐾</Text>
                               <TextInput
                                 value={f.state.value}
                                 onChangeText={(t) => f.handleChange(t)}
                                 placeholder="Perro"
                                 placeholderTextColor="#94A3B8"
-                                className="flex-1 py-4 text-text"
+                                style={styles.input}
                               />
                             </View>
                           </View>
                         )}
                       </Field>
                     </View>
-                    <View className="flex-1">
+                    <View style={styles.rowItem}>
                       <Field name="breed">
                         {(f) => (
-                          <View className="mb-5">
-                            <Text className="text-sm font-semibold text-text mb-2 ml-1">Raza</Text>
-                            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                              <Text className="text-lg mr-3">🧬</Text>
+                          <View>
+                            <Text style={styles.label}>Raza</Text>
+                            <View style={styles.inputContainer}>
+                              <Text style={styles.inputIcon}>🧬</Text>
                               <TextInput
                                 value={f.state.value}
                                 onChangeText={(t) => f.handleChange(t)}
                                 placeholder="Labrador"
                                 placeholderTextColor="#94A3B8"
-                                className="flex-1 py-4 text-text"
+                                style={styles.input}
                               />
                             </View>
                           </View>
@@ -201,17 +503,17 @@ export default function CreatePetScreen() {
                   {/* Edad */}
                   <Field name="age">
                     {(f) => (
-                      <View className="mb-5">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Edad (años) *</Text>
-                        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mr-3">🎂</Text>
+                      <View>
+                        <Text style={styles.label}>Edad (años) *</Text>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputIcon}>🎂</Text>
                           <TextInput
                             value={f.state.value}
                             onChangeText={(t) => f.handleChange(t)}
                             placeholder="2"
                             keyboardType="numeric"
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text"
+                            style={styles.input}
                           />
                         </View>
                       </View>
@@ -219,20 +521,25 @@ export default function CreatePetScreen() {
                   </Field>
 
                   {/* Tamaño */}
-                  <Text className="text-sm font-semibold text-text mb-3 ml-1">Tamaño *</Text>
+                  <Text style={styles.sizeLabel}>Tamaño *</Text>
                   <Field name="size">
                     {(f) => (
-                      <View className="flex-row mb-5 gap-3">
+                      <View style={styles.sizeContainer}>
                         {SIZES.map((s) => (
                           <TouchableOpacity
                             key={s.key}
                             onPress={() => f.handleChange(s.key)}
                             activeOpacity={0.85}
-                            className={`flex-1 py-4 rounded-2xl border items-center ${f.state.value === s.key ? 'bg-primary border-primary shadow-sm shadow-primary/30' : 'bg-gray-50 border-gray-200'}`}
-                            style={f.state.value === s.key ? { elevation: 3 } : {}}
+                            style={[
+                              styles.sizeButton,
+                              f.state.value === s.key ? styles.sizeButtonActive : styles.sizeButtonInactive
+                            ]}
                           >
-                            <Text className="text-xl mb-1">{s.icon}</Text>
-                            <Text className={`font-semibold text-sm ${f.state.value === s.key ? 'text-white' : 'text-text'}`}>{s.label}</Text>
+                            <Text style={styles.sizeIcon}>{s.icon}</Text>
+                            <Text style={[
+                              styles.sizeText,
+                              f.state.value === s.key ? styles.sizeTextActive : styles.sizeTextInactive
+                            ]}>{s.label}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -240,10 +547,10 @@ export default function CreatePetScreen() {
                   </Field>
 
                   {/* Tags */}
-                  <Text className="text-sm font-semibold text-text mb-3 ml-1">Etiquetas</Text>
+                  <Text style={styles.tagsLabel}>Etiquetas</Text>
                   <Field name="tags">
                     {(f) => (
-                      <View className="flex-row flex-wrap mb-5 gap-2">
+                      <View style={styles.tagsContainer}>
                         {TAGS.map((tag) => {
                           const active = f.state.value.includes(tag);
                           return (
@@ -251,10 +558,15 @@ export default function CreatePetScreen() {
                               key={tag}
                               onPress={() => f.handleChange(active ? f.state.value.filter((t) => t !== tag) : [...f.state.value, tag])}
                               activeOpacity={0.7}
-                              className={`px-4 py-2.5 rounded-full border ${active ? 'bg-primary border-primary shadow-sm shadow-primary/20' : 'bg-gray-50 border-gray-200'}`}
-                              style={active ? { elevation: 2 } : {}}
+                              style={[
+                                styles.tagButton,
+                                active ? styles.tagButtonActive : styles.tagButtonInactive
+                              ]}
                             >
-                              <Text className={`font-medium text-sm ${active ? 'text-white' : 'text-text'}`}>{tag}</Text>
+                              <Text style={[
+                                styles.tagText,
+                                active ? styles.tagTextActive : styles.tagTextInactive
+                              ]}>{tag}</Text>
                             </TouchableOpacity>
                           );
                         })}
@@ -265,17 +577,17 @@ export default function CreatePetScreen() {
                   {/* Descripción */}
                   <Field name="description">
                     {(f) => (
-                      <View className="mb-6">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Descripción</Text>
-                        <View className="flex-row bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mt-4 mr-3">📖</Text>
+                      <View>
+                        <Text style={styles.label}>Descripción</Text>
+                        <View style={styles.textareaContainer}>
+                          <Text style={styles.textareaIcon}>📖</Text>
                           <TextInput
                             value={f.state.value}
                             onChangeText={(t) => f.handleChange(t)}
                             placeholder="Cuéntanos sobre su personalidad..."
                             multiline
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text min-h-[100px]"
+                            style={styles.textarea}
                           />
                         </View>
                       </View>
@@ -286,11 +598,10 @@ export default function CreatePetScreen() {
                     onPress={() => form.handleSubmit()}
                     disabled={isSubmitting || uploading}
                     activeOpacity={0.85}
-                    className="py-4 rounded-2xl bg-primary items-center justify-center flex-row shadow-lg shadow-primary/40"
-                    style={{ elevation: 4 }}
+                    style={styles.submitButton}
                   >
-                    {(isSubmitting || uploading) && <ActivityIndicator color="white" className="mr-2" />}
-                    <Text className="font-bold text-base text-white">
+                    {(isSubmitting || uploading) && <ActivityIndicator color="white" style={{ marginRight: 8 }} />}
+                    <Text style={styles.submitButtonText}>
                       {isSubmitting || uploading ? 'Publicando...' : 'Publicar Mascota'}
                     </Text>
                   </TouchableOpacity>
@@ -300,8 +611,8 @@ export default function CreatePetScreen() {
           </View>
         </View>
 
-        <View className="items-center mt-8 pb-10 px-6">
-          <Text className="text-text-secondary/60 text-xs text-center max-w-xs">
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
             Al publicar, aceptas nuestros Términos y Condiciones
           </Text>
         </View>

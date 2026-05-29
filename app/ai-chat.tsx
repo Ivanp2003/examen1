@@ -1,8 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useState, useRef, useEffect } from 'react';
-import { askGemini } from '../src/infrastructure/api/gemini';
+import { askGemini } from '../src/infrastructure/api/deepseek';
 import { LoadingAnimation } from '../src/infrastructure/ui/animations/LoadingAnimation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Markdown from 'react-native-markdown-display';
 
 interface Message {
   id: string;
@@ -41,7 +42,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   messagesList: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -176,6 +177,100 @@ const styles = StyleSheet.create({
   },
 });
 
+const markdownStyles = StyleSheet.create({
+  body: {
+    color: '#1E293B',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  heading1: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  heading2: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  heading3: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  strong: {
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  em: {
+    fontStyle: 'italic',
+    color: '#475569',
+  },
+  link: {
+    color: '#4F46E5',
+    textDecorationLine: 'underline',
+  },
+  code_inline: {
+    backgroundColor: '#F1F5F9',
+    color: '#DC2626',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontFamily: 'monospace',
+    fontSize: 13,
+  },
+  code_block: {
+    backgroundColor: '#1E293B',
+    color: '#E2E8F0',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 8,
+    fontFamily: 'monospace',
+    fontSize: 13,
+  },
+  fence: {
+    backgroundColor: '#1E293B',
+    color: '#E2E8F0',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 8,
+    fontFamily: 'monospace',
+    fontSize: 13,
+  },
+  blockquote: {
+    backgroundColor: '#F1F5F9',
+    borderLeftWidth: 4,
+    borderLeftColor: '#4F46E5',
+    paddingLeft: 12,
+    paddingVertical: 8,
+    marginVertical: 8,
+    fontStyle: 'italic',
+  },
+  bullet_list: {
+    marginLeft: 16,
+    marginVertical: 4,
+  },
+  ordered_list: {
+    marginLeft: 16,
+    marginVertical: 4,
+  },
+  list_item: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  hr: {
+    backgroundColor: '#E2E8F0',
+    height: 1,
+    marginVertical: 12,
+  },
+});
+
 export default function AIChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -192,6 +287,9 @@ export default function AIChatScreen() {
   const handleSend = async () => {
     if (!inputText.trim() || loading) return;
 
+    // Debounce para evitar bloqueos por rate limit
+    await new Promise(r => setTimeout(r, 800));
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputText.trim(),
@@ -204,7 +302,19 @@ export default function AIChatScreen() {
     setLoading(true);
 
     try {
-      const response = await askGemini(userMessage.text, history);
+      // Sanitizar historial para asegurar estructura correcta
+      const sanitizedHistory = messages.map(msg => ({
+        role: msg.isUser ? ('user' as const) : ('model' as const),
+        parts: [{ text: msg.text }],
+      }));
+
+      console.log('📤 Enviando a Gemini:', {
+        prompt: userMessage.text,
+        historyLength: sanitizedHistory.length,
+        historySample: sanitizedHistory.slice(-2),
+      });
+
+      const response = await askGemini(userMessage.text, sanitizedHistory);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -214,10 +324,20 @@ export default function AIChatScreen() {
       };
 
       setMessages(prev => [...prev, aiMessage]);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('🔥 ERROR GEMINI DETALLADO:', error);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      
+      let errorText = 'Lo siento, hubo un error al procesar tu solicitud. Por favor, intenta nuevamente.';
+      
+      if (error?.message?.includes('API Key') || error?.message?.includes('undefined')) {
+        errorText = 'Error: La API Key de Gemini no está configurada correctamente. Verifica tu archivo .env';
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Lo siento, hubo un error al procesar tu solicitud. Por favor, intenta nuevamente.',
+        text: errorText,
         isUser: false,
         timestamp: new Date(),
       };
@@ -238,9 +358,15 @@ export default function AIChatScreen() {
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={[styles.messageContainer, item.isUser ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]}>
       <View style={item.isUser ? styles.userMessage : styles.aiMessage}>
-        <Text style={item.isUser ? styles.userMessageText : styles.aiMessageText}>
-          {item.text}
-        </Text>
+        {item.isUser ? (
+          <Text style={styles.userMessageText}>
+            {item.text}
+          </Text>
+        ) : (
+          <Markdown style={markdownStyles}>
+            {item.text}
+          </Markdown>
+        )}
       </View>
       <Text style={[styles.timestamp, item.isUser ? { textAlign: 'right' } : { textAlign: 'left' }]}>
         {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -260,7 +386,11 @@ export default function AIChatScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       <View style={styles.header}>
         <Text style={styles.title}>Asistente de IA PetAdopt</Text>
         <Text style={styles.subtitle}>
@@ -281,38 +411,36 @@ export default function AIChatScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messagesList}
         ListEmptyComponent={renderEmpty}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+        style={{ flex: 1 }}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-      >
-        <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 12 }]}>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={[styles.input, isInputFocused && styles.inputFocused]}
-              placeholder="Escribe tu pregunta sobre mascotas..."
-              placeholderTextColor="#94A3B8"
-              value={inputText}
-              onChangeText={setInputText}
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
-              multiline
-              maxLength={500}
-              returnKeyType="send"
-              onSubmitEditing={handleSend}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-              onPress={handleSend}
-              disabled={!inputText.trim() || loading}
-            >
-              <Text style={styles.sendButtonText}>→</Text>
-            </TouchableOpacity>
-          </View>
+      <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 12 }]}>
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={[styles.input, isInputFocused && styles.inputFocused]}
+            placeholder="Escribe tu pregunta sobre mascotas..."
+            placeholderTextColor="#94A3B8"
+            value={inputText}
+            onChangeText={setInputText}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
+            multiline
+            maxLength={500}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+            onPress={handleSend}
+            disabled={!inputText.trim() || loading}
+          >
+            <Text style={styles.sendButtonText}>→</Text>
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 }

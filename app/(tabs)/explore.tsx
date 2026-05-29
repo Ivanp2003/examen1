@@ -1,126 +1,210 @@
-import { View, Text, TextInput, ScrollView, Alert, StyleSheet } from 'react-native';
-import { useState, useEffect } from 'react';
-import MapView, { Marker } from 'react-native-maps';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
-import LottieView from 'lottie-react-native';
-import { PetCard } from '../../src/infrastructure/ui/components/PetCard';
-import { Pet } from '../../src/domain/entities/Pet';
-import { SupabasePetRepository } from '../../src/infrastructure/repositories/SupabasePetRepository';
 import { supabase } from '../../src/infrastructure/api/supabase';
 
-const petRepo = new SupabasePetRepository();
-
-interface ShelterMarker {
+interface Shelter {
   id: string;
   nombre: string;
   latitude: number;
   longitude: number;
+  description: string;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#FFF7ED',
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 64,
-    paddingBottom: 16,
+  map: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#6D597A',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
   },
-  searchInput: {
+  loadingText: {
     marginTop: 16,
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    borderRadius: 16,
     fontSize: 16,
     color: '#6D597A',
+    fontWeight: '500',
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#6D597A',
-    marginBottom: 16,
-  },
-  mapContainer: {
-    height: 256,
+  distanceCard: {
+    position: 'absolute',
+    bottom: 24,
+    left: 16,
+    right: 16,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 8,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F1F3F5',
   },
-  mapLoading: {
-    flex: 1,
-    backgroundColor: '#F1F3F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapLoadingText: {
+  distanceTitle: {
+    fontSize: 14,
     color: '#6D597A',
+    fontWeight: '500',
+  },
+  distanceValue: {
+    fontSize: 24,
+    color: '#F4A261',
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  distanceShelter: {
+    fontSize: 16,
+    color: '#6D597A',
+    marginTop: 4,
+  },
+  clearButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#F4A261',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  clearButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 
+// Refugios de fallback para demostración (coordenadas Quito/EPN)
+const FALLBACK_SHELTERS: Shelter[] = [
+  {
+    id: 'shelter-1',
+    nombre: 'Refugio Esperanza',
+    latitude: -0.2105,
+    longitude: -78.4916,
+    description: 'Refugio de mascotas - Listo para adoptar',
+  },
+  {
+    id: 'shelter-2',
+    nombre: 'Hogar Animal',
+    latitude: -0.2150,
+    longitude: -78.4850,
+    description: 'Refugio de mascotas - Listo para adoptar',
+  },
+  {
+    id: 'shelter-3',
+    nombre: 'Patitas Felices',
+    latitude: -0.2050,
+    longitude: -78.4980,
+    description: 'Refugio de mascotas - Listo para adoptar',
+  },
+];
+
 export default function ExploreScreen() {
-  const [allPets, setAllPets] = useState<Pet[]>([]);
-  const [query, setQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [shelters, setShelters] = useState<ShelterMarker[]>([]);
+  const [shelters, setShelters] = useState<Shelter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+
+  // Calcular distancia usando fórmula Haversine (en km)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const handleShelterPress = (shelter: Shelter) => {
+    if (!userLocation) return;
+    
+    setSelectedShelter(shelter);
+    const dist = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      shelter.latitude,
+      shelter.longitude
+    );
+    setDistance(dist);
+  };
+
+  const clearSelection = () => {
+    setSelectedShelter(null);
+    setDistance(null);
+  };
 
   useEffect(() => {
     (async () => {
       try {
+        // Solicitar permisos de ubicación
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permiso denegado', 'No se puede acceder a la ubicación.');
+          console.log('Permiso de ubicación denegado, usando ubicación por defecto');
+          setUserLocation({ latitude: -0.2105, longitude: -78.4916 });
         } else {
+          // Obtener ubicación actual
           const loc = await Location.getCurrentPositionAsync({});
           setUserLocation({
             latitude: loc.coords.latitude,
             longitude: loc.coords.longitude,
           });
         }
-      } catch {
-        setUserLocation({ latitude: 19.4326, longitude: -99.1332 });
+
+        // Cargar refugios de Supabase
+        const { data: sheltersData, error } = await supabase
+          .from('usuarios')
+          .select('id, nombre, metadata')
+          .eq('role', 'refugio');
+
+        if (error) {
+          console.error('Error cargando refugios:', error);
+          setShelters(FALLBACK_SHELTERS);
+        } else if (sheltersData && sheltersData.length > 0) {
+          // Convertir datos de Supabase a formato de marcadores
+          const shelterMarkers: Shelter[] = sheltersData.map((s: any) => ({
+            id: s.id,
+            nombre: s.nombre || 'Refugio',
+            latitude: s.metadata?.latitude || -0.2105,
+            longitude: s.metadata?.longitude || -78.4916,
+            description: 'Refugio de mascotas - Listo para adoptar',
+          }));
+          setShelters(shelterMarkers);
+        } else {
+          // Usar refugios de fallback si no hay datos
+          console.log('No hay refugios en la base de datos, usando fallback');
+          setShelters(FALLBACK_SHELTERS);
+        }
+      } catch (error) {
+        console.error('Error en inicialización:', error);
+        setUserLocation({ latitude: -0.2105, longitude: -78.4916 });
+        setShelters(FALLBACK_SHELTERS);
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [petsData, { data: sheltersData }] = await Promise.all([
-          petRepo.getAllPets(),
-          supabase.from('usuarios').select('id, nombre, metadata').eq('role', 'refugio'),
-        ]);
-
-        setAllPets(petsData);
-
-        if (sheltersData) {
-          const center = userLocation || { latitude: 19.4326, longitude: -99.1332 };
-          const markers: ShelterMarker[] = sheltersData.map((s: any, i: number) => ({
-            id: s.id,
-            nombre: s.nombre || 'Refugio',
-            latitude: center.latitude + (Math.random() - 0.5) * 0.05,
-            longitude: center.longitude + (Math.random() - 0.5) * 0.05,
-          }));
-          setShelters(markers);
-        }
-      } catch {} finally {
-        setLoading(false);
-      }
-    })();
-  }, [userLocation]);
-
-  const results = query.length < 2
-    ? allPets
-    : allPets.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#F4A261" />
+        <Text style={styles.loadingText}>Cargando mapa...</Text>
+      </View>
+    );
+  }
 
   const region = userLocation
     ? {
@@ -129,77 +213,79 @@ export default function ExploreScreen() {
         latitudeDelta: 0.05,
         longitudeDelta: 0.05,
       }
-    : undefined;
+    : {
+        latitude: -0.2105,
+        longitude: -78.4916,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Explorar</Text>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Buscar por nombre..."
-          placeholderTextColor="#94A3B8"
-          style={styles.searchInput}
-        />
-      </View>
-
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }}>
-        <Text style={styles.sectionTitle}>Refugios cercanos</Text>
-
-        <View style={styles.mapContainer}>
-          {userLocation ? (
-            <MapView
-              style={{ flex: 1 }}
-              initialRegion={region}
-              showsUserLocation
-              showsMyLocationButton
-            >
-              {shelters.map((s) => (
-                <Marker
-                  key={s.id}
-                  coordinate={{ latitude: s.latitude, longitude: s.longitude }}
-                  title={s.nombre}
-                  pinColor="#F4A261"
-                />
-              ))}
-            </MapView>
-          ) : (
-            <View style={styles.mapLoading}>
-              <Text style={styles.mapLoadingText}>Cargando mapa...</Text>
-            </View>
-          )}
-        </View>
-
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
-          {query.length >= 2 ? 'Resultados' : 'Todas las mascotas'}
-        </Text>
-
-        {loading ? (
-          <View style={{ alignItems: 'center', marginTop: 16 }}>
-            <LottieView
-              source={require('../../assets/animations/loading.json')}
-              autoPlay
-              loop
-              style={{ width: 80, height: 80 }}
-            />
-          </View>
-        ) : results.length === 0 ? (
-          <View style={{ alignItems: 'center', marginTop: 32 }}>
-            <LottieView
-              source={require('../../assets/animations/empty.json')}
-              autoPlay
-              loop
-              style={{ width: 120, height: 120 }}
-            />
-            <Text style={[styles.mapLoadingText, { marginTop: 16 }]}>Sin resultados</Text>
-          </View>
-        ) : (
-          results.map((pet) => (
-            <PetCard key={pet.id} pet={pet} onPress={() => router.push(`/pet/${pet.id}`)} />
-          ))
+      <MapView
+        style={styles.map}
+        initialRegion={region}
+        showsUserLocation
+        showsMyLocationButton
+      >
+        {/* Marcador del usuario (azul) */}
+        {userLocation && (
+          <Marker
+            coordinate={{
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
+            }}
+            title="Tu ubicación"
+            description="Estás aquí"
+            pinColor="#4285F4"
+          />
         )}
-      </ScrollView>
+
+        {/* Línea entre usuario y refugio seleccionado */}
+        {selectedShelter && userLocation && (
+          <Polyline
+            coordinates={[
+              {
+                latitude: userLocation.latitude,
+                longitude: userLocation.longitude,
+              },
+              {
+                latitude: selectedShelter.latitude,
+                longitude: selectedShelter.longitude,
+              },
+            ]}
+            strokeColor="#F4A261"
+            strokeWidth={3}
+          />
+        )}
+
+        {/* Marcadores de refugios */}
+        {shelters.map((shelter) => (
+          <Marker
+            key={shelter.id}
+            coordinate={{
+              latitude: shelter.latitude,
+              longitude: shelter.longitude,
+            }}
+            title={shelter.nombre}
+            description={shelter.description}
+            pinColor={selectedShelter?.id === shelter.id ? "#E76F51" : "#F4A261"}
+            onPress={() => handleShelterPress(shelter)}
+          />
+        ))}
+      </MapView>
+
+      {/* Card de distancia */}
+      {selectedShelter && distance !== null && (
+        <View style={styles.distanceCard}>
+          <Text style={styles.distanceTitle}>Distancia al refugio</Text>
+          <Text style={styles.distanceValue}>{distance.toFixed(2)} km</Text>
+          <Text style={styles.distanceShelter}>{selectedShelter.nombre}</Text>
+          <TouchableOpacity style={styles.clearButton} onPress={clearSelection}>
+            <Text style={styles.clearButtonText}>Limpiar selección</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
