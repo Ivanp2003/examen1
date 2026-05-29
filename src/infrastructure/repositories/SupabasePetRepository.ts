@@ -51,4 +51,12 @@ export class SupabasePetRepository implements IPetRepository {
 
     return supabase.storage.from('pet-images').getPublicUrl(data.path).data.publicUrl;
   }
+
+  async updatePetStatus(petId: string, status: 'disponible' | 'adoptado' | 'pendiente'): Promise<void> {
+    const { error } = await supabase
+      .from('mascotas')
+      .update({ status })
+      .eq('id', petId);
+    if (error) throw error;
+  }
 }

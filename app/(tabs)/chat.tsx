@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
-  Image, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
   ActivityIndicator,
-  Alert 
+  Alert
 } from 'react-native';
 import { useAppStore } from '../../src/application/store/useAppStore';
 import { SupabaseAdoptionRepository } from '../../src/infrastructure/repositories/SupabaseAdoptionRepository';
+import { SupabasePetRepository } from '../../src/infrastructure/repositories/SupabasePetRepository';
 
 const adoptionRepo = new SupabaseAdoptionRepository();
+const petRepo = new SupabasePetRepository();
 
 // Datos de prueba para demostración del examen
 const mockRequests = [
@@ -97,10 +99,26 @@ export default function ChatRequestsScreen() {
 
   const handleUpdateStatus = async (requestId: string, newStatus: 'aprobado' | 'rechazado') => {
     try {
+      console.log('🔄 Actualizando solicitud:', requestId, 'a', newStatus);
+      
+      // Find the request to get the pet_id
+      const request = requests.find(r => r.id === requestId);
+      console.log('📦 Request found:', request);
+      
       await adoptionRepo.updateRequestStatus(requestId, newStatus);
+      console.log('✅ Solicitud actualizada a', newStatus);
+      
+      // If approved, update pet status to 'adoptado'
+      if (newStatus === 'aprobado' && request?.pet_id) {
+        console.log('🐾 Actualizando estado de mascota:', request.pet_id, 'a adoptado');
+        await petRepo.updatePetStatus(request.pet_id, 'adoptado');
+        console.log('✅ Estado de mascota actualizado a adoptado');
+      }
+      
       Alert.alert("Éxito", `Solicitud ${newStatus} correctamente.`);
       loadRequests(); // Recargar la lista de inmediato
     } catch (error) {
+      console.error('❌ Error updating status:', error);
       Alert.alert("Error", "No se pudo actualizar el estado de la solicitud.");
     }
   };

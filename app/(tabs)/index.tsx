@@ -143,11 +143,25 @@ export default function HomeScreen() {
 
   const fetchPets = useCallback(async () => {
     try {
+      console.log('🔄 fetchPets - Role:', role);
       const data = role === 'refugio'
         ? await petRepo.getPetsByShelter(user!.id)
         : await getPets.execute();
-      setPets(data);
-    } catch {
+      
+      console.log('📦 Mascotas obtenidas:', data.length);
+      data.forEach(pet => {
+        console.log(`  - ${pet.name}: status=${pet.status}`);
+      });
+      
+      // Filtrar solo mascotas disponibles para adoptantes
+      const filteredPets = role === 'refugio'
+        ? data
+        : data.filter(pet => pet.status === 'disponible');
+      
+      console.log('✅ Mascotas filtradas:', filteredPets.length);
+      setPets(filteredPets);
+    } catch (error) {
+      console.error('❌ Error fetching pets:', error);
       setPets([]);
     } finally {
       setLoading(false);
@@ -155,7 +169,7 @@ export default function HomeScreen() {
     }
   }, [role]);
 
-  useEffect(() => { fetchPets(); }, []);
+  useEffect(() => { fetchPets(); }, [fetchPets]);
 
   const onRefresh = () => { setRefreshing(true); fetchPets(); };
 

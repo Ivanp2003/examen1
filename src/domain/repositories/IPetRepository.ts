@@ -5,4 +5,5 @@ export interface IPetRepository {
   getPetsByShelter(shelterId: string): Promise<Pet[]>;
   createPet(pet: Omit<Pet, 'id' | 'created_at'>): Promise<Pet>;
   uploadPetImage(localUri: string): Promise<string>;
+  updatePetStatus(petId: string, status: 'disponible' | 'adoptado' | 'pendiente'): Promise<void>;
 }
