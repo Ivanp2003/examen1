@@ -1,14 +1,197 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
-import { LoginUseCase } from '../src/application/use-cases/AuthUseCases';
+import { LoginUseCase, LoginWithGoogleUseCase } from '../src/application/use-cases/AuthUseCases';
 
 const { width } = Dimensions.get('window');
 
 const authRepo = new SupabaseAuthRepository();
 const loginUseCase = new LoginUseCase(authRepo);
+const loginWithGoogleUseCase = new LoginWithGoogleUseCase(authRepo);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+  },
+  heroGradient: {
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 64,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    backgroundColor: '#F4A261',
+  },
+  heroContent: {
+    alignItems: 'center',
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  logoEmoji: {
+    fontSize: 40,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 8,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  formContainer: {
+    paddingHorizontal: 24,
+    marginTop: -32,
+  },
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: '#6D597A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#F1F3F5',
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#6D597A',
+    marginBottom: 4,
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    color: '#84A98C',
+    marginBottom: 32,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6D597A',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F3F5',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  inputIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#6D597A',
+  },
+  forgotPassword: {
+    marginBottom: 32,
+    alignItems: 'flex-end',
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#84A98C',
+    fontWeight: '600',
+  },
+  loginButton: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    shadowColor: '#F4A261',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+    backgroundColor: '#F4A261',
+  },
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  registerContainer: {
+    alignItems: 'center',
+    marginTop: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  registerText: {
+    fontSize: 14,
+    color: '#6D597A',
+  },
+  registerLink: {
+    fontSize: 14,
+    color: '#F4A261',
+    fontWeight: 'bold',
+  },
+  termsText: {
+    fontSize: 12,
+    color: 'rgba(109, 89, 122, 0.5)',
+    marginTop: 24,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E8E8E8',
+  },
+  dividerText: {
+    paddingHorizontal: 12,
+    fontSize: 12,
+    color: '#84A98C',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6D597A',
+    marginLeft: 12,
+  },
+});
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
@@ -28,36 +211,36 @@ export default function LoginScreen() {
   const Field = form.Field;
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="flex-grow" keyboardShouldPersistTaps="handled" bounces={false}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" bounces={false}>
         {/* Hero Section */}
-        <View className="bg-primary px-6 pt-20 pb-16 rounded-b-[40px]">
-          <View className="items-center">
-            <View className="w-20 h-20 bg-white/20 rounded-2xl items-center justify-center mb-4 backdrop-blur">
-              <Text className="text-4xl">🐾</Text>
+        <View style={styles.heroGradient}>
+          <View style={styles.heroContent}>
+            <View style={styles.logoContainer}>
+              <Text style={styles.logoEmoji}>🐾</Text>
             </View>
-            <Text className="text-4xl font-bold text-white tracking-tight">PetAdopt</Text>
-            <Text className="text-white/80 text-base mt-2 text-center max-w-xs">
+            <Text style={styles.title}>PetAdopt</Text>
+            <Text style={styles.subtitle}>
               Encuentra a tu compañero perfecto y cambia una vida
             </Text>
           </View>
         </View>
 
         {/* Form Section */}
-        <View className="px-6 -mt-8">
-          <View className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-            <Text className="text-2xl font-bold text-text mb-1">Bienvenido de nuevo</Text>
-            <Text className="text-text-secondary text-sm mb-8">Inicia sesión para continuar</Text>
+        <View style={styles.formContainer}>
+          <View style={styles.formCard}>
+            <Text style={styles.welcomeTitle}>Bienvenido de nuevo</Text>
+            <Text style={styles.welcomeSubtitle}>Inicia sesión para continuar</Text>
 
             <form.Subscribe selector={(s) => s.isSubmitting}>
               {(isSubmitting) => (
                 <>
                   <Field name="email">
                     {(field) => (
-                      <View className="mb-5">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Correo electrónico</Text>
-                        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mr-3">📧</Text>
+                      <View>
+                        <Text style={styles.label}>Correo electrónico</Text>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputIcon}>📧</Text>
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
@@ -65,7 +248,7 @@ export default function LoginScreen() {
                             keyboardType="email-address"
                             autoCapitalize="none"
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text"
+                            style={styles.input}
                           />
                         </View>
                       </View>
@@ -74,39 +257,61 @@ export default function LoginScreen() {
 
                   <Field name="password">
                     {(field) => (
-                      <View className="mb-2">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Contraseña</Text>
-                        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mr-3">🔒</Text>
+                      <View>
+                        <Text style={styles.label}>Contraseña</Text>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputIcon}>🔒</Text>
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
                             placeholder="••••••••"
                             secureTextEntry={!showPassword}
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text"
+                            style={styles.input}
                           />
-                          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="ml-2">
-                            <Text className="text-lg">{showPassword ? '🙈' : '👁️'}</Text>
+                          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                            <Text style={styles.inputIcon}>{showPassword ? '🙈' : '👁️'}</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
                     )}
                   </Field>
 
-                  <TouchableOpacity className="mb-8">
-                    <Text className="text-primary text-sm font-medium text-right">¿Olvidaste tu contraseña?</Text>
+                  <TouchableOpacity style={styles.forgotPassword}>
+                    <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => form.handleSubmit()}
                     disabled={isSubmitting}
                     activeOpacity={0.85}
-                    className="py-4 rounded-2xl bg-primary items-center justify-center flex-row shadow-lg shadow-primary/40"
-                    style={{ elevation: 4 }}
+                    style={styles.loginButton}
                   >
-                    {isSubmitting && <ActivityIndicator color="white" className="mr-2" />}
-                    <Text className="font-bold text-base text-white">{isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}</Text>
+                    {isSubmitting && <ActivityIndicator color="white" style={{ marginRight: 8 }} />}
+                    <Text style={styles.loginButtonText}>{isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>o continúa con</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        await loginWithGoogleUseCase.execute();
+                        // After successful Google auth, navigate to tabs
+                        router.replace('/(tabs)');
+                      } catch (err: any) {
+                        Alert.alert('Error', err.message || 'No se pudo iniciar sesión con Google');
+                      }
+                    }}
+                    activeOpacity={0.85}
+                    style={styles.googleButton}
+                  >
+                    <Text style={{ fontSize: 24 }}>🔷</Text>
+                    <Text style={styles.googleButtonText}>Continuar con Google</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -115,12 +320,12 @@ export default function LoginScreen() {
         </View>
 
         {/* Register CTA */}
-        <View className="items-center mt-8 pb-10 px-6">
-          <Text className="text-text-secondary text-sm">
+        <View style={styles.registerContainer}>
+          <Text style={styles.registerText}>
             ¿No tienes cuenta?{' '}
-            <Text className="text-primary font-bold" onPress={() => router.push('/register')}>Crear cuenta</Text>
+            <Text style={styles.registerLink} onPress={() => router.push('/register')}>Crear cuenta</Text>
           </Text>
-          <Text className="text-text-secondary/60 text-xs mt-6 text-center max-w-xs">
+          <Text style={styles.termsText}>
             Al continuar, aceptas nuestros Términos y Condiciones
           </Text>
         </View>

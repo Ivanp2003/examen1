@@ -1,4 +1,4 @@
-import { View, Text, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, ScrollView, Alert, StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -17,6 +17,54 @@ interface ShelterMarker {
   latitude: number;
   longitude: number;
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 64,
+    paddingBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#6D597A',
+  },
+  searchInput: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    borderRadius: 16,
+    fontSize: 16,
+    color: '#6D597A',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#6D597A',
+    marginBottom: 16,
+  },
+  mapContainer: {
+    height: 256,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  mapLoading: {
+    flex: 1,
+    backgroundColor: '#F1F3F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapLoadingText: {
+    color: '#6D597A',
+  },
+});
 
 export default function ExploreScreen() {
   const [allPets, setAllPets] = useState<Pet[]>([]);
@@ -84,22 +132,22 @@ export default function ExploreScreen() {
     : undefined;
 
   return (
-    <View className="flex-1 bg-background">
-      <View className="px-6 pt-16 pb-4">
-        <Text className="text-3xl font-bold text-text">Explorar</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Explorar</Text>
         <TextInput
           value={query}
           onChangeText={setQuery}
           placeholder="Buscar por nombre..."
           placeholderTextColor="#94A3B8"
-          className="mt-4 p-4 bg-white border border-gray-200 rounded-xl text-text"
+          style={styles.searchInput}
         />
       </View>
 
-      <ScrollView contentContainerClassName="px-6 pb-8">
-        <Text className="text-lg font-semibold text-text mb-4">Refugios cercanos</Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }}>
+        <Text style={styles.sectionTitle}>Refugios cercanos</Text>
 
-        <View className="h-64 rounded-2xl overflow-hidden mb-2">
+        <View style={styles.mapContainer}>
           {userLocation ? (
             <MapView
               style={{ flex: 1 }}
@@ -112,23 +160,23 @@ export default function ExploreScreen() {
                   key={s.id}
                   coordinate={{ latitude: s.latitude, longitude: s.longitude }}
                   title={s.nombre}
-                  pinColor="#7C3AED"
+                  pinColor="#F4A261"
                 />
               ))}
             </MapView>
           ) : (
-            <View className="flex-1 bg-gray-200 items-center justify-center">
-              <Text className="text-text-secondary">Cargando mapa...</Text>
+            <View style={styles.mapLoading}>
+              <Text style={styles.mapLoadingText}>Cargando mapa...</Text>
             </View>
           )}
         </View>
 
-        <Text className="text-lg font-semibold text-text mt-6 mb-4">
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>
           {query.length >= 2 ? 'Resultados' : 'Todas las mascotas'}
         </Text>
 
         {loading ? (
-          <View className="items-center mt-4">
+          <View style={{ alignItems: 'center', marginTop: 16 }}>
             <LottieView
               source={require('../../assets/animations/loading.json')}
               autoPlay
@@ -137,14 +185,14 @@ export default function ExploreScreen() {
             />
           </View>
         ) : results.length === 0 ? (
-          <View className="items-center mt-8">
+          <View style={{ alignItems: 'center', marginTop: 32 }}>
             <LottieView
               source={require('../../assets/animations/empty.json')}
               autoPlay
               loop
               style={{ width: 120, height: 120 }}
             />
-            <Text className="text-text-secondary mt-4">Sin resultados</Text>
+            <Text style={[styles.mapLoadingText, { marginTop: 16 }]}>Sin resultados</Text>
           </View>
         ) : (
           results.map((pet) => (

@@ -1,0 +1,11 @@
+{
+  "name": "petadopt-web",
+  "version": "1.0.0",
+  "description": "Sitio web auxiliar para PetAdopt - Manejo de autenticación Supabase",
+  "scripts": {
+    "dev": "npx serve ."
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

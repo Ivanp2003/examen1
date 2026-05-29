@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, ScrollView, KeyboardAvoidingView, Platform,
-  Alert, TextInput, TouchableOpacity, ActivityIndicator,
+  Alert, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet,
 } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
@@ -12,6 +12,194 @@ const authRepo = new SupabaseAuthRepository();
 const registerUseCase = new RegisterUseCase(authRepo);
 
 type Role = 'refugio' | 'adoptante';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+  },
+  hero: {
+    paddingHorizontal: 24,
+    paddingTop: 64,
+    paddingBottom: 48,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    backgroundColor: '#F4A261',
+  },
+  heroContent: {
+    alignItems: 'center',
+  },
+  heroIcon: {
+    width: 64,
+    height: 64,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  heroIconText: {
+    fontSize: 28,
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 8,
+  },
+  formContainer: {
+    paddingHorizontal: 24,
+    marginTop: -28,
+  },
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#FFEDD5',
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6D597A',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    marginBottom: 24,
+    gap: 12,
+  },
+  roleButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  roleButtonActive: {
+    backgroundColor: '#F4A261',
+    borderColor: '#F4A261',
+  },
+  roleButtonInactive: {
+    backgroundColor: '#FFEDD5',
+    borderColor: '#FED7AA',
+  },
+  roleButtonIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  roleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  roleButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  roleButtonTextInactive: {
+    color: '#6D597A',
+  },
+  fieldContainer: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6D597A',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFEDD5',
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+  },
+  inputIcon: {
+    fontSize: 18,
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 16,
+    color: '#6D597A',
+  },
+  togglePassword: {
+    marginLeft: 8,
+  },
+  togglePasswordText: {
+    fontSize: 18,
+  },
+  conditionalFields: {
+    marginBottom: 16,
+    padding: 20,
+    backgroundColor: '#FFEDD5',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+  },
+  conditionalTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#6D597A',
+    marginBottom: 16,
+  },
+  conditionalInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  submitButton: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#F4A261',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    shadowColor: '#F4A261',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitButtonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  loginCTA: {
+    alignItems: 'center',
+    marginTop: 24,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
+  loginCTAText: {
+    fontSize: 14,
+    color: '#6D597A',
+  },
+  loginCTALink: {
+    color: '#F4A261',
+    fontWeight: 'bold',
+  },
+});
 
 export default function RegisterScreen() {
   const [role, setRole] = useState<Role>('adoptante');
@@ -51,36 +239,40 @@ export default function RegisterScreen() {
   const Field = form.Field;
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="flex-grow" keyboardShouldPersistTaps="handled" bounces={false}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" bounces={false}>
         {/* Hero Section */}
-        <View className="bg-primary px-6 pt-16 pb-12 rounded-b-[40px]">
-          <View className="items-center">
-            <View className="w-16 h-16 bg-white/20 rounded-2xl items-center justify-center mb-3">
-              <Text className="text-3xl">🐾</Text>
+        <View style={styles.hero}>
+          <View style={styles.heroContent}>
+            <View style={styles.heroIcon}>
+              <Text style={styles.heroIconText}>🐾</Text>
             </View>
-            <Text className="text-3xl font-bold text-white tracking-tight">Crear Cuenta</Text>
-            <Text className="text-white/80 text-sm mt-2">Únete a la comunidad PetAdopt</Text>
+            <Text style={styles.heroTitle}>Crear Cuenta</Text>
+            <Text style={styles.heroSubtitle}>Únete a la comunidad PetAdopt</Text>
           </View>
         </View>
 
         {/* Form */}
-        <View className="px-6 -mt-7">
-          <View className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
+        <View style={styles.formContainer}>
+          <View style={styles.formCard}>
             {/* Tipo de usuario */}
-            <Text className="text-sm font-semibold text-text mb-3 ml-1">Elige tu perfil</Text>
-            <View className="flex-row mb-6 gap-3">
+            <Text style={styles.sectionLabel}>Elige tu perfil</Text>
+            <View style={styles.roleSelector}>
               {(['adoptante', 'refugio'] as Role[]).map((opt) => (
                 <TouchableOpacity
                   key={opt}
                   onPress={() => { setRole(opt); form.reset(); }}
                   activeOpacity={0.8}
-                  className={`flex-1 py-3.5 rounded-2xl border-2 items-center ${
-                    role === opt ? 'bg-primary border-primary' : 'bg-gray-50 border-gray-200'
-                  }`}
+                  style={[
+                    styles.roleButton,
+                    role === opt ? styles.roleButtonActive : styles.roleButtonInactive,
+                  ]}
                 >
-                  <Text className={`text-xl mb-1`}>{opt === 'adoptante' ? '❤️' : '🏠'}</Text>
-                  <Text className={`font-semibold text-sm ${role === opt ? 'text-white' : 'text-text'}`}>
+                  <Text style={styles.roleButtonIcon}>{opt === 'adoptante' ? '❤️' : '🏠'}</Text>
+                  <Text style={[
+                    styles.roleButtonText,
+                    role === opt ? styles.roleButtonTextActive : styles.roleButtonTextInactive,
+                  ]}>
                     {opt === 'adoptante' ? 'Adoptante' : 'Refugio'}
                   </Text>
                 </TouchableOpacity>
@@ -93,16 +285,16 @@ export default function RegisterScreen() {
                   {/* Nombre */}
                   <Field name="nombre">
                     {(field) => (
-                      <View className="mb-4">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Nombre completo</Text>
-                        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mr-3">👤</Text>
+                      <View style={styles.fieldContainer}>
+                        <Text style={styles.fieldLabel}>Nombre completo</Text>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputIcon}>👤</Text>
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
                             placeholder="Juan Pérez"
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text"
+                            style={styles.input}
                           />
                         </View>
                       </View>
@@ -112,10 +304,10 @@ export default function RegisterScreen() {
                   {/* Email */}
                   <Field name="email">
                     {(field) => (
-                      <View className="mb-4">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Correo electrónico</Text>
-                        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mr-3">📧</Text>
+                      <View style={styles.fieldContainer}>
+                        <Text style={styles.fieldLabel}>Correo electrónico</Text>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputIcon}>📧</Text>
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
@@ -123,7 +315,7 @@ export default function RegisterScreen() {
                             keyboardType="email-address"
                             autoCapitalize="none"
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text"
+                            style={styles.input}
                           />
                         </View>
                       </View>
@@ -133,20 +325,20 @@ export default function RegisterScreen() {
                   {/* Password */}
                   <Field name="password">
                     {(field) => (
-                      <View className="mb-4">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Contraseña</Text>
-                        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mr-3">🔒</Text>
+                      <View style={styles.fieldContainer}>
+                        <Text style={styles.fieldLabel}>Contraseña</Text>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputIcon}>🔒</Text>
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
                             placeholder="Mínimo 6 caracteres"
                             secureTextEntry={!showPassword}
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text"
+                            style={styles.input}
                           />
-                          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="ml-2">
-                            <Text className="text-lg">{showPassword ? '🙈' : '👁️'}</Text>
+                          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.togglePassword}>
+                            <Text style={styles.togglePasswordText}>{showPassword ? '🙈' : '👁️'}</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -156,20 +348,20 @@ export default function RegisterScreen() {
                   {/* Confirm Password */}
                   <Field name="confirmPassword">
                     {(field) => (
-                      <View className="mb-4">
-                        <Text className="text-sm font-semibold text-text mb-2 ml-1">Confirmar contraseña</Text>
-                        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4">
-                          <Text className="text-lg mr-3">🔐</Text>
+                      <View style={styles.fieldContainer}>
+                        <Text style={styles.fieldLabel}>Confirmar contraseña</Text>
+                        <View style={styles.inputContainer}>
+                          <Text style={styles.inputIcon}>🔐</Text>
                           <TextInput
                             value={field.state.value}
                             onChangeText={(text) => field.handleChange(text)}
                             placeholder="Repite la contraseña"
                             secureTextEntry={!showConfirm}
                             placeholderTextColor="#94A3B8"
-                            className="flex-1 py-4 text-text"
+                            style={styles.input}
                           />
-                          <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} className="ml-2">
-                            <Text className="text-lg">{showConfirm ? '🙈' : '👁️'}</Text>
+                          <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={styles.togglePassword}>
+                            <Text style={styles.togglePasswordText}>{showConfirm ? '🙈' : '👁️'}</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -177,8 +369,8 @@ export default function RegisterScreen() {
                   </Field>
 
                   {/* Campos condicionales según rol */}
-                  <View className="mb-4 p-5 bg-gray-50 rounded-2xl border border-gray-200">
-                    <Text className="text-sm font-bold text-text mb-4">
+                  <View style={styles.conditionalFields}>
+                    <Text style={styles.conditionalTitle}>
                       {role === 'adoptante' ? '📋 Información del adoptante' : '🏠 Información del refugio'}
                     </Text>
 
@@ -186,16 +378,16 @@ export default function RegisterScreen() {
                       <>
                         <Field name="cedula">
                           {(field) => (
-                            <View className="mb-3">
-                              <Text className="text-sm font-medium text-text mb-2 ml-1">Cédula / Identificación</Text>
-                              <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl px-4">
-                                <Text className="text-base mr-3">🪪</Text>
+                            <View style={styles.fieldContainer}>
+                              <Text style={styles.fieldLabel}>Cédula / Identificación</Text>
+                              <View style={styles.conditionalInputContainer}>
+                                <Text style={styles.inputIcon}>🪪</Text>
                                 <TextInput
                                   value={field.state.value}
                                   onChangeText={(text) => field.handleChange(text)}
                                   placeholder="123456789"
                                   placeholderTextColor="#94A3B8"
-                                  className="flex-1 py-3.5 text-text"
+                                  style={styles.input}
                                 />
                               </View>
                             </View>
@@ -203,16 +395,16 @@ export default function RegisterScreen() {
                         </Field>
                         <Field name="ocupacion">
                           {(field) => (
-                            <View>
-                              <Text className="text-sm font-medium text-text mb-2 ml-1">Ocupación</Text>
-                              <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl px-4">
-                                <Text className="text-base mr-3">💼</Text>
+                            <View style={styles.fieldContainer}>
+                              <Text style={styles.fieldLabel}>Ocupación</Text>
+                              <View style={styles.conditionalInputContainer}>
+                                <Text style={styles.inputIcon}>💼</Text>
                                 <TextInput
                                   value={field.state.value}
                                   onChangeText={(text) => field.handleChange(text)}
                                   placeholder="Ingeniero, Docente, etc."
                                   placeholderTextColor="#94A3B8"
-                                  className="flex-1 py-3.5 text-text"
+                                  style={styles.input}
                                 />
                               </View>
                             </View>
@@ -223,16 +415,16 @@ export default function RegisterScreen() {
                       <>
                         <Field name="direccion">
                           {(field) => (
-                            <View className="mb-3">
-                              <Text className="text-sm font-medium text-text mb-2 ml-1">Dirección del refugio</Text>
-                              <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl px-4">
-                                <Text className="text-base mr-3">📍</Text>
+                            <View style={styles.fieldContainer}>
+                              <Text style={styles.fieldLabel}>Dirección del refugio</Text>
+                              <View style={styles.conditionalInputContainer}>
+                                <Text style={styles.inputIcon}>📍</Text>
                                 <TextInput
                                   value={field.state.value}
                                   onChangeText={(text) => field.handleChange(text)}
                                   placeholder="Calle 123, Ciudad"
                                   placeholderTextColor="#94A3B8"
-                                  className="flex-1 py-3.5 text-text"
+                                  style={styles.input}
                                 />
                               </View>
                             </View>
@@ -240,17 +432,17 @@ export default function RegisterScreen() {
                         </Field>
                         <Field name="telefono">
                           {(field) => (
-                            <View>
-                              <Text className="text-sm font-medium text-text mb-2 ml-1">Teléfono de contacto</Text>
-                              <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl px-4">
-                                <Text className="text-base mr-3">📞</Text>
+                            <View style={styles.fieldContainer}>
+                              <Text style={styles.fieldLabel}>Teléfono de contacto</Text>
+                              <View style={styles.conditionalInputContainer}>
+                                <Text style={styles.inputIcon}>📞</Text>
                                 <TextInput
                                   value={field.state.value}
                                   onChangeText={(text) => field.handleChange(text)}
                                   placeholder="+52 555 123 4567"
                                   keyboardType="phone-pad"
                                   placeholderTextColor="#94A3B8"
-                                  className="flex-1 py-3.5 text-text"
+                                  style={styles.input}
                                 />
                               </View>
                             </View>
@@ -264,11 +456,10 @@ export default function RegisterScreen() {
                     onPress={() => form.handleSubmit()}
                     disabled={isSubmitting}
                     activeOpacity={0.85}
-                    className="py-4 rounded-2xl bg-primary items-center justify-center flex-row shadow-lg shadow-primary/40"
-                    style={{ elevation: 4 }}
+                    style={styles.submitButton}
                   >
-                    {isSubmitting && <ActivityIndicator color="white" className="mr-2" />}
-                    <Text className="font-bold text-base text-white">{isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta'}</Text>
+                    {isSubmitting && <ActivityIndicator color="white" style={{ marginRight: 8 }} />}
+                    <Text style={styles.submitButtonText}>{isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta'}</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -277,10 +468,10 @@ export default function RegisterScreen() {
         </View>
 
         {/* Login CTA */}
-        <View className="items-center mt-6 pb-10 px-6">
-          <Text className="text-text-secondary text-sm">
+        <View style={styles.loginCTA}>
+          <Text style={styles.loginCTAText}>
             ¿Ya tienes cuenta?{' '}
-            <Text className="text-primary font-bold" onPress={() => router.push('/login')}>Inicia sesión</Text>
+            <Text style={styles.loginCTALink} onPress={() => router.push('/login')}>Inicia sesión</Text>
           </Text>
         </View>
       </ScrollView>

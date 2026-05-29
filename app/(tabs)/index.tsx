@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, Dimensions, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LottieView from 'lottie-react-native';
@@ -14,6 +14,123 @@ const { width } = Dimensions.get('window');
 
 const petRepo = new SupabasePetRepository();
 const getPets = new GetAvailablePetsUseCase(petRepo);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 32,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    backgroundColor: '#F4A261',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitle: {
+    flex: 1,
+  },
+  headerSubtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  headerTitleText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  logoContainer: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    fontSize: 24,
+  },
+  statsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F1F3F5',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#F4A261',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6D597A',
+    marginTop: 4,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#E8E8E8',
+  },
+  subtitleContainer: {
+    paddingHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  subtitleText: {
+    fontSize: 14,
+    color: '#6D597A',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 32,
+    right: 24,
+    width: 64,
+    height: 64,
+    backgroundColor: '#F4A261',
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F4A261',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  fabText: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    lineHeight: 32,
+  },
+  emptyButton: {
+    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    backgroundColor: '#F4A261',
+    borderRadius: 16,
+  },
+  emptyButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+});
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -48,7 +165,7 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-background items-center justify-center">
+      <View style={styles.container}>
         <LottieView
           source={require('../../assets/animations/loading.json')}
           autoPlay loop style={{ width: 120, height: 120 }}
@@ -58,49 +175,49 @@ export default function HomeScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <View style={styles.container}>
       {/* Header */}
-      <View className="bg-primary px-6 pt-12 pb-8 rounded-b-[32px]" style={{ paddingTop: insets.top + 8 }}>
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1">
-            <Text className="text-white/70 text-sm font-medium">
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTitle}>
+            <Text style={styles.headerSubtitle}>
               {role === 'refugio' ? 'Panel de gestión' : 'Descubre mascotas'}
             </Text>
-            <Text className="text-3xl font-bold text-white mt-1">
+            <Text style={styles.headerTitleText}>
               {role === 'refugio' ? 'Mis Mascotas' : 'Mascotas en Adopción'}
             </Text>
           </View>
-          <View className="w-12 h-12 bg-white/20 rounded-2xl items-center justify-center">
-            <Text className="text-2xl">🐾</Text>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoText}>🐾</Text>
           </View>
         </View>
       </View>
 
       {/* Stats for shelters */}
       {role === 'refugio' && pets.length > 0 && (
-        <View className="px-6 -mt-5">
-          <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 flex-row justify-around">
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-primary">{pets.length}</Text>
-              <Text className="text-text-secondary text-xs mt-1">Total</Text>
+        <View style={{ paddingHorizontal: 24, marginTop: -20 }}>
+          <View style={styles.statsCard}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{pets.length}</Text>
+              <Text style={styles.statLabel}>Total</Text>
             </View>
-            <View className="w-px bg-gray-200" />
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-success">{pets.filter(p => p.status === 'disponible').length}</Text>
-              <Text className="text-text-secondary text-xs mt-1">Disponibles</Text>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: '#84A98C' }]}>{pets.filter(p => p.status === 'disponible').length}</Text>
+              <Text style={styles.statLabel}>Disponibles</Text>
             </View>
-            <View className="w-px bg-gray-200" />
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-accent">{pets.filter(p => p.status === 'pendiente').length}</Text>
-              <Text className="text-text-secondary text-xs mt-1">Pendientes</Text>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: '#6D597A' }]}>{pets.filter(p => p.status === 'pendiente').length}</Text>
+              <Text style={styles.statLabel}>Pendientes</Text>
             </View>
           </View>
         </View>
       )}
 
       {/* Subtitle */}
-      <View className="px-6 mt-6 mb-4">
-        <Text className="text-text-secondary text-sm">
+      <View style={styles.subtitleContainer}>
+        <Text style={styles.subtitleText}>
           {role === 'refugio'
             ? 'Administra tus mascotas registradas'
             : `${pets.length} mascotas esperando un hogar`}
@@ -112,28 +229,28 @@ export default function HomeScreen() {
         data={pets}
         keyExtractor={(item) => item.id}
         renderItem={renderPet}
-        contentContainerClassName="px-6 pb-28"
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 112 }}
         refreshControl={<RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#4F46E5"
-          colors={['#4F46E5']}
+          tintColor="#F4A261"
+          colors={['#F4A261']}
         />}
         ListEmptyComponent={
-          <View className="items-center mt-16">
+          <View style={{ alignItems: 'center', marginTop: 64 }}>
             <LottieView
               source={require('../../assets/animations/empty.json')}
               autoPlay loop style={{ width: 150, height: 150 }}
             />
-            <Text className="text-text-secondary mt-4 text-base">
+            <Text style={[styles.subtitleText, { marginTop: 16, fontSize: 16 }]}>
               {role === 'refugio' ? 'No has registrado mascotas aún' : 'No hay mascotas disponibles'}
             </Text>
             {role === 'refugio' && (
               <TouchableOpacity
                 onPress={() => router.push('/create-pet')}
-                className="mt-6 py-3 px-8 bg-primary rounded-2xl"
+                style={styles.emptyButton}
               >
-                <Text className="text-white font-bold">Registrar primera mascota</Text>
+                <Text style={styles.emptyButtonText}>Registrar primera mascota</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -145,10 +262,9 @@ export default function HomeScreen() {
         <TouchableOpacity
           onPress={() => router.push('/create-pet')}
           activeOpacity={0.85}
-          className="absolute bottom-8 right-6 w-16 h-16 bg-primary rounded-full items-center justify-center shadow-xl"
-          style={{ elevation: 8 }}
+          style={styles.fab}
         >
-          <Text className="text-white text-3xl leading-none">+</Text>
+          <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
       )}
     </View>

@@ -15,6 +15,14 @@ export class LoginUseCase {
   }
 }
 
+export class LoginWithGoogleUseCase {
+  constructor(private authRepo: IAuthRepository) {}
+
+  async execute(): Promise<void> {
+    await this.authRepo.loginWithGoogle();
+  }
+}
+
 export class RegisterUseCase {
   constructor(private authRepo: IAuthRepository) {}
 

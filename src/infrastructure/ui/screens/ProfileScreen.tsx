@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,145 @@ const menuItems = [
   { label: 'Asistente IA', icon: '🤖', desc: 'Consejos y recomendaciones', onPress: () => router.push('/ai-chat') },
   { label: 'Configuración', icon: '⚙️', desc: 'Ajustes de la cuenta', onPress: () => {} },
 ];
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF7ED',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 80,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    backgroundColor: '#F4A261',
+  },
+  headerContent: {
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 96,
+    height: 96,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  name: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  roleBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+    marginTop: 4,
+  },
+  roleBadgeText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  email: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  menuContainer: {
+    paddingHorizontal: 24,
+    marginTop: -56,
+  },
+  menuCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F1F3F5',
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  menuItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+  },
+  menuIcon: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(244, 162, 97, 0.1)',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuIconText: {
+    fontSize: 24,
+  },
+  menuInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  menuLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6D597A',
+  },
+  menuDesc: {
+    fontSize: 12,
+    color: '#6D597A',
+    marginTop: 2,
+  },
+  menuArrow: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#F1F3F5',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuArrowText: {
+    color: '#6D597A',
+    fontSize: 18,
+  },
+  logoutButton: {
+    marginTop: 24,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(109, 89, 122, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutButtonText: {
+    color: '#6D597A',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  version: {
+    color: 'rgba(109, 89, 122, 0.4)',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 24,
+  },
+});
 
 export const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
@@ -45,45 +184,43 @@ export const ProfileScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="pb-8" bounces={false}>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 }} bounces={false}>
         {/* Profile Header */}
-        <View className="bg-primary px-6 pt-12 pb-20 rounded-b-[40px]" style={{ paddingTop: insets.top + 12 }}>
-          <View className="items-center">
-            <View className="w-24 h-24 bg-white/20 rounded-full items-center justify-center mb-4 border-2 border-white/30">
-              <Text className="text-white text-4xl font-bold">{user?.nombre?.[0]?.toUpperCase() || '?'}</Text>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+          <View style={styles.headerContent}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{user?.nombre?.[0]?.toUpperCase() || '?'}</Text>
             </View>
-            <Text className="text-2xl font-bold text-white">{user?.nombre || 'Usuario'}</Text>
-            <View className="flex-row items-center mt-1">
-              <View className="bg-white/20 px-3 py-1 rounded-full">
-                <Text className="text-white/90 text-xs font-medium">
-                  {user?.role === 'refugio' ? '🏠 Refugio' : '❤️ Adoptante'}
-                </Text>
-              </View>
+            <Text style={styles.name}>{user?.nombre || 'Usuario'}</Text>
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleBadgeText}>
+                {user?.role === 'refugio' ? '🏠 Refugio' : '❤️ Adoptante'}
+              </Text>
             </View>
-            <Text className="text-white/70 text-sm mt-2">{user?.email}</Text>
+            <Text style={styles.email}>{user?.email}</Text>
           </View>
         </View>
 
         {/* Menu Cards */}
-        <View className="px-6 -mt-14">
-          <View className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <View style={styles.menuContainer}>
+          <View style={styles.menuCard}>
             {menuItems.map((item, i) => (
               <TouchableOpacity
                 key={i}
                 onPress={item.onPress}
                 activeOpacity={0.7}
-                className={`flex-row items-center p-5 ${i < menuItems.length - 1 ? 'border-b border-gray-100' : ''}`}
+                style={[styles.menuItem, i < menuItems.length - 1 && styles.menuItemBorder]}
               >
-                <View className="w-12 h-12 bg-primary/10 rounded-2xl items-center justify-center">
-                  <Text className="text-2xl">{item.icon}</Text>
+                <View style={styles.menuIcon}>
+                  <Text style={styles.menuIconText}>{item.icon}</Text>
                 </View>
-                <View className="flex-1 ml-4">
-                  <Text className="font-semibold text-text">{item.label}</Text>
-                  <Text className="text-text-secondary text-xs mt-0.5">{item.desc}</Text>
+                <View style={styles.menuInfo}>
+                  <Text style={styles.menuLabel}>{item.label}</Text>
+                  <Text style={styles.menuDesc}>{item.desc}</Text>
                 </View>
-                <View className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center">
-                  <Text className="text-text-secondary text-lg">›</Text>
+                <View style={styles.menuArrow}>
+                  <Text style={styles.menuArrowText}>›</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -94,19 +231,17 @@ export const ProfileScreen = () => {
             onPress={handleLogout}
             activeOpacity={0.8}
             disabled={loading}
-            className="mt-6 py-4 rounded-2xl bg-white border border-error/20 items-center justify-center flex-row"
+            style={styles.logoutButton}
           >
             {loading ? (
-              <Text className="text-text-secondary">Cerrando sesión...</Text>
+              <Text style={styles.logoutButtonText}>Cerrando sesión...</Text>
             ) : (
-              <>
-                <Text className="text-error font-bold text-base">Cerrar Sesión</Text>
-              </>
+              <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
             )}
           </TouchableOpacity>
 
           {/* Version */}
-          <Text className="text-text-secondary/40 text-xs text-center mt-6">PetAdopt v1.0.0</Text>
+          <Text style={styles.version}>PetAdopt v1.0.0</Text>
         </View>
       </ScrollView>
     </View>

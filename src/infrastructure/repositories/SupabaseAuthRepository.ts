@@ -1,6 +1,9 @@
 import { User } from '../../domain/entities/User';
 import { IAuthRepository } from '../../domain/repositories/IAuthRepository';
 import { supabase } from '../api/supabase';
+import * as WebBrowser from 'expo-web-browser';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export class SupabaseAuthRepository implements IAuthRepository {
   async login(email: string, password: string): Promise<User> {
@@ -25,6 +28,26 @@ export class SupabaseAuthRepository implements IAuthRepository {
       metadata: profile.metadata ?? {},
       created_at: profile.created_at,
     };
+  }
+
+  async loginWithGoogle(): Promise<void> {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'petadopt://',
+        skipBrowserRedirect: false,
+      },
+    });
+
+    if (error) throw error;
+
+    if (data.url) {
+      const result = await WebBrowser.openBrowserAsync(data.url);
+
+      if (result.type === 'cancel') {
+        throw new Error('Autenticación cancelada por el usuario');
+      }
+    }
   }
 
   async register(

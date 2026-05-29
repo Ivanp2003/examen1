@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, Alert, StyleSheet } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
 import { useAppStore } from '../../src/application/store/useAppStore';
 import { SupabaseAdoptionRepository } from '../../src/infrastructure/repositories/SupabaseAdoptionRepository';
@@ -18,17 +18,216 @@ interface RequestWithDetails extends AdoptionRequest {
   applicant?: User;
 }
 
-const statusColors: Record<string, string> = {
-  pendiente: 'bg-accent/20 text-accent',
-  aprobado: 'bg-success/20 text-success',
-  rechazado: 'bg-error/20 text-error',
-};
-
 const statusLabels: Record<string, string> = {
   pendiente: 'Pendiente',
   aprobado: 'Aprobado',
   rechazado: 'Rechazado',
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FDFBF7',
+    paddingHorizontal: 16,
+  },
+  header: {
+    paddingHorizontal: 8,
+    paddingTop: 64,
+    paddingBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 4,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 64,
+  },
+  emptyText: {
+    color: '#64748B',
+    marginTop: 16,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FFEEDD',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    padding: 16,
+  },
+  petImage: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  petImagePlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  petImageText: {
+    fontSize: 24,
+  },
+  cardInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  applicantName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  petNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  petName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4F46E5',
+  },
+  statusBadge: {
+    marginLeft: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  statusPendiente: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusPendienteText: {
+    color: '#92400E',
+  },
+  statusAprobado: {
+    backgroundColor: '#D1FAE5',
+  },
+  statusAprobadoText: {
+    color: '#065F46',
+  },
+  statusRechazado: {
+    backgroundColor: '#FEE2E2',
+  },
+  statusRechazadoText: {
+    color: '#991B1B',
+  },
+  badgesContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  badgeIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  badgeText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#FFEEDD',
+    padding: 8,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  actionButtonReject: {
+    backgroundColor: '#EF4444',
+    marginRight: 6,
+  },
+  actionButtonRejectText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  actionButtonAccept: {
+    backgroundColor: '#10B981',
+    marginLeft: 6,
+  },
+  actionButtonAcceptText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  compactCard: {
+    flexDirection: 'row',
+    padding: 16,
+    alignItems: 'center',
+  },
+  compactImage: {
+    width: 64,
+    height: 64,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  compactInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  compactName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  compactDetails: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  compactDate: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  compactStatus: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  compactStatusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});
 
 export default function RequestsScreen() {
   const user = useAppStore((s) => s.user);
@@ -40,6 +239,7 @@ export default function RequestsScreen() {
     if (!user) return;
     setLoading(true);
     try {
+      console.log('Fetching requests for user:', user.id, 'role:', user.role);
       const allPets = await petRepo.getAllPets();
       setPets(allPets);
 
@@ -49,6 +249,8 @@ export default function RequestsScreen() {
       } else {
         data = await adoptionRepo.getRequestsByApplicant(user.id);
       }
+
+      console.log('Raw requests data:', data);
 
       const enriched: RequestWithDetails[] = await Promise.all(
         data.map(async (req) => {
@@ -75,8 +277,10 @@ export default function RequestsScreen() {
         })
       );
 
+      console.log('Enriched requests:', enriched);
       setRequests(enriched);
-    } catch {
+    } catch (error) {
+      console.error('Error fetching requests:', error);
       setRequests([]);
     } finally {
       setLoading(false);
@@ -98,45 +302,52 @@ export default function RequestsScreen() {
     }
   };
 
-  if (loading) return <View className="flex-1 bg-background items-center justify-center"><LoadingAnimation /></View>;
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <LoadingAnimation />
+        </View>
+      </View>
+    );
+  }
 
   if (!user) return null;
 
   return (
-    <View className="flex-1 bg-background">
-      <View className="px-6 pt-16 pb-4">
-        <Text className="text-3xl font-bold text-text">Solicitudes</Text>
-        <Text className="text-text-secondary mt-1">
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Solicitudes</Text>
+        <Text style={styles.subtitle}>
           {user.role === 'refugio' ? 'Solicitudes de adopción recibidas' : 'Historial de tus solicitudes'}
         </Text>
       </View>
 
-      <ScrollView contentContainerClassName="px-6 pb-8">
-        {requests.length === 0 ? (
-          <View className="items-center mt-16">
-            <EmptyAnimation />
-            <Text className="text-text-secondary mt-4">
-              {user.role === 'refugio'
-                ? 'No hay solicitudes aún'
-                : 'No has enviado solicitudes'}
-            </Text>
-          </View>
-        ) : (
-          requests.map((req) => (
-            <View key={req.id} className="bg-white rounded-2xl mb-4 border border-gray-100 overflow-hidden">
-              {user.role === 'refugio' ? (
-                <RefugioCard
-                  request={req}
-                  onAccept={() => handleStatusUpdate(req.id, 'aprobado')}
-                  onReject={() => handleStatusUpdate(req.id, 'rechazado')}
-                />
-              ) : (
-                <AdoptanteCard request={req} />
-              )}
-            </View>
-          ))
-        )}
-      </ScrollView>
+      {requests.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <EmptyAnimation />
+          <Text style={styles.emptyText}>
+            {user.role === 'refugio' ? 'No hay solicitudes aún' : 'No has enviado solicitudes'}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={requests}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            user.role === 'refugio' ? (
+              <RefugioCard
+                request={item}
+                onAccept={() => handleStatusUpdate(item.id, 'aprobado')}
+                onReject={() => handleStatusUpdate(item.id, 'rechazado')}
+              />
+            ) : (
+              <AdoptanteCard request={item} />
+            )
+          )}
+          contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 32 }}
+        />
+      )}
     </View>
   );
 }
@@ -146,31 +357,46 @@ function RefugioCard({ request, onAccept, onReject }: { request: RequestWithDeta
   const applicant = request.applicant;
   const meta = request.applicant_metadata;
 
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'pendiente':
+        return { bg: styles.statusPendiente, text: styles.statusPendienteText };
+      case 'aprobado':
+        return { bg: styles.statusAprobado, text: styles.statusAprobadoText };
+      case 'rechazado':
+        return { bg: styles.statusRechazado, text: styles.statusRechazadoText };
+      default:
+        return { bg: { backgroundColor: '#F3F4F6' }, text: { color: '#6B7280' } };
+    }
+  };
+
+  const statusStyle = getStatusStyle(request.status);
+
   return (
-    <View>
-      <View className="flex-row p-4">
-        <View className="w-20 h-20 bg-gray-200 rounded-xl overflow-hidden">
+    <View style={styles.card}>
+      <View style={styles.cardContent}>
+        <View style={styles.petImage}>
           {pet?.images?.[0] ? (
-            <Image source={{ uri: pet.images[0] }} className="w-full h-full" resizeMode="cover" />
+            <Image source={{ uri: pet.images[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           ) : (
-            <View className="flex-1 items-center justify-center">
-              <Text className="text-2xl">🐾</Text>
+            <View style={styles.petImagePlaceholder}>
+              <Text style={styles.petImageText}>🐾</Text>
             </View>
           )}
         </View>
-        <View className="flex-1 ml-4">
-          <Text className="font-bold text-text text-lg">{applicant?.nombre || 'Desconocido'}</Text>
-          <View className="flex-row items-center mt-1">
-            <Text className="text-primary font-semibold">{pet?.name || 'Mascota'}</Text>
-            <View className={`ml-2 px-2 py-0.5 rounded-full ${statusColors[request.status] || 'bg-gray-200'}`}>
-              <Text className="text-xs font-medium">{statusLabels[request.status]}</Text>
+        <View style={styles.cardInfo}>
+          <Text style={styles.applicantName}>{applicant?.nombre || 'Desconocido'}</Text>
+          <View style={styles.petNameRow}>
+            <Text style={styles.petName}>{pet?.name || 'Mascota'}</Text>
+            <View style={[styles.statusBadge, statusStyle.bg]}>
+              <Text style={[styles.statusBadgeText, statusStyle.text]}>{statusLabels[request.status]}</Text>
             </View>
           </View>
         </View>
       </View>
 
       {meta && (
-        <View className="px-4 pb-3 flex-row flex-wrap gap-2">
+        <View style={styles.badgesContainer}>
           <Badge
             icon={meta.hogar === 'casa' ? '🏠' : '🏢'}
             text={meta.hogar === 'casa' ? 'Casa' : 'Departamento'}
@@ -186,19 +412,18 @@ function RefugioCard({ request, onAccept, onReject }: { request: RequestWithDeta
       )}
 
       {request.status === 'pendiente' && (
-        <View className="flex-row border-t border-gray-100">
+        <View style={styles.actions}>
           <TouchableOpacity
             onPress={onReject}
-            className="flex-1 py-3 items-center bg-error/10"
+            style={[styles.actionButton, styles.actionButtonReject]}
           >
-            <Text className="text-error font-semibold">Rechazar</Text>
+            <Text style={styles.actionButtonRejectText}>Rechazar</Text>
           </TouchableOpacity>
-          <View className="w-[1px] bg-gray-100" />
           <TouchableOpacity
             onPress={onAccept}
-            className="flex-1 py-3 items-center bg-success/10"
+            style={[styles.actionButton, styles.actionButtonAccept]}
           >
-            <Text className="text-success font-semibold">Aceptar</Text>
+            <Text style={styles.actionButtonAcceptText}>Aceptar Adopción</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -209,28 +434,43 @@ function RefugioCard({ request, onAccept, onReject }: { request: RequestWithDeta
 function AdoptanteCard({ request }: { request: RequestWithDetails }) {
   const pet = request.pet;
 
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'pendiente':
+        return { bg: styles.statusPendiente, text: styles.statusPendienteText };
+      case 'aprobado':
+        return { bg: styles.statusAprobado, text: styles.statusAprobadoText };
+      case 'rechazado':
+        return { bg: styles.statusRechazado, text: styles.statusRechazadoText };
+      default:
+        return { bg: { backgroundColor: '#F3F4F6' }, text: { color: '#6B7280' } };
+    }
+  };
+
+  const statusStyle = getStatusStyle(request.status);
+
   return (
-    <View className="flex-row p-4 items-center">
-      <View className="w-16 h-16 bg-gray-200 rounded-xl overflow-hidden">
+    <View style={[styles.card, styles.compactCard]}>
+      <View style={styles.compactImage}>
         {pet?.images?.[0] ? (
-          <Image source={{ uri: pet.images[0] }} className="w-full h-full" resizeMode="cover" />
+          <Image source={{ uri: pet.images[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         ) : (
-          <View className="flex-1 items-center justify-center">
-            <Text className="text-2xl">🐾</Text>
+          <View style={styles.petImagePlaceholder}>
+            <Text style={styles.petImageText}>🐾</Text>
           </View>
         )}
       </View>
-      <View className="flex-1 ml-4">
-        <Text className="font-bold text-text">{pet?.name || 'Mascota'}</Text>
-        <Text className="text-text-secondary text-sm mt-0.5">
+      <View style={styles.compactInfo}>
+        <Text style={styles.compactName}>{pet?.name || 'Mascota'}</Text>
+        <Text style={styles.compactDetails}>
           {pet?.species} - {pet?.breed}
         </Text>
-        <Text className="text-text-secondary text-xs mt-0.5">
+        <Text style={styles.compactDate}>
           Solicitado el {new Date(request.created_at).toLocaleDateString()}
         </Text>
       </View>
-      <View className={`px-3 py-1 rounded-full ${statusColors[request.status] || 'bg-gray-200'}`}>
-        <Text className="text-xs font-bold">{statusLabels[request.status]}</Text>
+      <View style={[styles.compactStatus, statusStyle.bg]}>
+        <Text style={[styles.compactStatusText, statusStyle.text]}>{statusLabels[request.status]}</Text>
       </View>
     </View>
   );
@@ -238,9 +478,9 @@ function AdoptanteCard({ request }: { request: RequestWithDetails }) {
 
 function Badge({ icon, text }: { icon: string; text: string }) {
   return (
-    <View className="flex-row items-center bg-gray-100 px-2.5 py-1 rounded-full">
-      <Text className="text-xs mr-1">{icon}</Text>
-      <Text className="text-xs text-text-secondary font-medium">{text}</Text>
+    <View style={styles.badge}>
+      <Text style={styles.badgeIcon}>{icon}</Text>
+      <Text style={styles.badgeText}>{text}</Text>
     </View>
   );
 }
