@@ -11,6 +11,8 @@ export class LoginUseCase {
       email: user.email,
       role: user.role,
       nombre: user.nombre,
+      metadata: user.metadata,
+      created_at: user.created_at,
     });
   }
 }
@@ -18,8 +20,8 @@ export class LoginUseCase {
 export class LoginWithGoogleUseCase {
   constructor(private authRepo: IAuthRepository) {}
 
-  async execute(): Promise<void> {
-    await this.authRepo.loginWithGoogle();
+  async execute(redirectUrl?: string): Promise<void> {
+    await this.authRepo.loginWithGoogle(redirectUrl);
   }
 }
 
@@ -39,6 +41,8 @@ export class RegisterUseCase {
       email: user.email,
       role: user.role,
       nombre: user.nombre,
+      metadata: user.metadata,
+      created_at: user.created_at,
     });
   }
 }

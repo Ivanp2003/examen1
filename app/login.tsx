@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
 import { LoginUseCase, LoginWithGoogleUseCase } from '../src/application/use-cases/AuthUseCases';
 
@@ -300,9 +301,15 @@ export default function LoginScreen() {
                   <TouchableOpacity
                     onPress={async () => {
                       try {
-                        await loginWithGoogleUseCase.execute();
-                        // After successful Google auth, navigate to tabs
-                        router.replace('/(tabs)');
+                        // Detectar si estamos en Expo Go (desarrollo) o producción
+                        const isExpoGo = Constants.appOwnership === 'expo';
+                        const redirectUrl = isExpoGo
+                          ? 'exp://192.168.110.186:8081/--/auth/callback'
+                          : 'petadopt://auth/callback';
+
+                        console.log('🔗 Redirect URL:', redirectUrl);
+                        await loginWithGoogleUseCase.execute(redirectUrl);
+                        // After successful Google auth, the callback will handle navigation
                       } catch (err: any) {
                         Alert.alert('Error', err.message || 'No se pudo iniciar sesión con Google');
                       }

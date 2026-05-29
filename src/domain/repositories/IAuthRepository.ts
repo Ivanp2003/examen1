@@ -2,7 +2,7 @@ import { User, UserMetadata } from '../entities/User';
 
 export interface IAuthRepository {
   login(email: string, password: string): Promise<User>;
-  loginWithGoogle(): Promise<void>;
+  loginWithGoogle(redirectUrl?: string): Promise<void>;
   register(
     email: string,
     password: string,

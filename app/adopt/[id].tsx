@@ -9,6 +9,7 @@ import { SupabaseAdoptionRepository } from '../../src/infrastructure/repositorie
 import { SupabasePetRepository } from '../../src/infrastructure/repositories/SupabasePetRepository';
 import { Pet } from '../../src/domain/entities/Pet';
 import { AdoptionStatus } from '../../src/domain/entities/AdoptionRequest';
+import { supabase } from '../../src/infrastructure/api/supabase';
 
 const adoptionRepo = new SupabaseAdoptionRepository();
 const petRepo = new SupabasePetRepository();
@@ -159,28 +160,37 @@ export default function AdoptScreen() {
     },
     onSubmit: async ({ value }) => {
       console.log('🔘 Botón enviar presionado');
-      console.log('👤 Usuario:', user);
+      console.log('👤 Usuario (store):', user);
       console.log('🐾 Mascota:', pet);
       console.log('🆔 Pet ID:', id);
-      
-      if (!user) {
-        console.error('❌ Usuario no autenticado');
-        Alert.alert('Error', 'Debes iniciar sesión para enviar una solicitud de adopción.');
-        router.replace('/login');
-        return;
-      }
-      
+
       if (!pet) {
         console.error('❌ Mascota no encontrada');
         Alert.alert('Error', 'No se encontró la mascota. Intenta nuevamente.');
         return;
       }
-      
+
+      // Fallback de emergencia por si el Store de Zustand no se ha sincronizado
+      let currentUserId = user?.id;
+      if (!currentUserId) {
+        console.log('⚠️ Usuario nulo en store, intentando obtener sesión de Supabase...');
+        const { data: sessionData } = await supabase.auth.getSession();
+        currentUserId = sessionData?.session?.user?.id;
+        console.log('🆔 User ID de Supabase:', currentUserId);
+      }
+
+      if (!currentUserId) {
+        console.error('❌ Usuario no autenticado de forma local ni en Supabase');
+        Alert.alert('Error', 'Usuario no autenticado. Debes iniciar sesión para enviar una solicitud de adopción.');
+        router.replace('/login');
+        return;
+      }
+
       try {
         console.log('📦 Datos del formulario:', value);
         const requestData = {
           pet_id: id!,
-          applicant_id: user.id,
+          applicant_id: currentUserId,
           shelter_id: pet.shelter_id,
           applicant_metadata: {
             hogar: value.hogar,
@@ -192,7 +202,7 @@ export default function AdoptScreen() {
           status: 'pendiente' as AdoptionStatus,
         };
         console.log('📝 Enviando solicitud:', requestData);
-        
+
         await adoptionRepo.submitRequest(requestData);
         console.log('✅ Solicitud enviada, cambiando a success');
         setSuccess(true);

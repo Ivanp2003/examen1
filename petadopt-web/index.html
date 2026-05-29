@@ -11,6 +11,17 @@
             font-family: 'Inter', sans-serif;
         }
     </style>
+    <script>
+        // OAuth Callback Handler - Redirect tokens to Expo Go
+        (function() {
+            const hash = window.location.hash;
+            if (hash && (hash.includes('access_token') || hash.includes('refresh_token') || hash.includes('error_code'))) {
+                console.log('🔗 OAuth callback detected, redirecting to app...');
+                // Reenvía los tokens directamente a la app en Expo Go
+                window.location.href = "exp://192.168.110.186:8081/--/auth/callback" + hash;
+            }
+        })();
+    </script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-orange-100 to-amber-50 flex items-center justify-center p-4">
     <div class="max-w-md w-full">

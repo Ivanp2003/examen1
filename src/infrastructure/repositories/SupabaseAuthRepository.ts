@@ -30,22 +30,27 @@ export class SupabaseAuthRepository implements IAuthRepository {
     };
   }
 
-  async loginWithGoogle(): Promise<void> {
+  async loginWithGoogle(redirectUrl?: string): Promise<void> {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'petadopt://',
-        skipBrowserRedirect: false,
+        redirectTo: redirectUrl || 'petadopt://auth/callback',
+        skipBrowserRedirect: true,
       },
     });
 
     if (error) throw error;
 
     if (data.url) {
-      const result = await WebBrowser.openBrowserAsync(data.url);
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl || 'petadopt://auth/callback');
 
       if (result.type === 'cancel') {
         throw new Error('Autenticación cancelada por el usuario');
+      }
+
+      if (result.type === 'success') {
+        // The callback page will handle the session
+        console.log('✅ OAuth completado, callback manejará la sesión');
       }
     }
   }
