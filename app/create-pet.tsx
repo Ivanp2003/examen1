@@ -6,12 +6,12 @@ import {
 import { useForm } from '@tanstack/react-form';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import LottieView from 'lottie-react-native';
 
 import { PetSize, PetTag, PetStatus } from '../src/domain/entities/Pet';
 import { SupabasePetRepository } from '../src/infrastructure/repositories/SupabasePetRepository';
 import { CreatePetUseCase } from '../src/application/use-cases/PetUseCases';
 import { useAppStore } from '../src/application/store/useAppStore';
+import { DogAnimation } from '../src/infrastructure/ui/animations/DogAnimation';
 
 const petRepo = new SupabasePetRepository();
 const createPet = new CreatePetUseCase(petRepo);
@@ -390,10 +390,7 @@ export default function CreatePetScreen() {
   if (success) {
     return (
       <View style={styles.successContainer}>
-        <LottieView
-          source={require('../assets/animations/success.json')}
-          autoPlay loop={false} style={{ width: 120, height: 120 }}
-        />
+        <DogAnimation size={120} loop={false} />
         <Text style={styles.successText}>¡Mascota registrada!</Text>
       </View>
     );

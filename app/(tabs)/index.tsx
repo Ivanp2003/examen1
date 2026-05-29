@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, Dimensions, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import LottieView from 'lottie-react-native';
 
 import { Pet } from '../../src/domain/entities/Pet';
 import { SupabasePetRepository } from '../../src/infrastructure/repositories/SupabasePetRepository';
 import { GetAvailablePetsUseCase } from '../../src/application/use-cases/PetUseCases';
 import { useAppStore } from '../../src/application/store/useAppStore';
 import { PetCard } from '../../src/infrastructure/ui/components/PetCard';
+import { PawAnimation } from '../../src/infrastructure/ui/animations/PawAnimation';
 
 const { width } = Dimensions.get('window');
 
@@ -180,10 +180,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <LottieView
-          source={require('../../assets/animations/loading.json')}
-          autoPlay loop style={{ width: 120, height: 120 }}
-        />
+        <PawAnimation size={120} />
       </View>
     );
   }
@@ -202,7 +199,7 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>🐾</Text>
+            <PawAnimation size={28} />
           </View>
         </View>
       </View>
@@ -252,10 +249,7 @@ export default function HomeScreen() {
         />}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 64 }}>
-            <LottieView
-              source={require('../../assets/animations/empty.json')}
-              autoPlay loop style={{ width: 150, height: 150 }}
-            />
+            <PawAnimation size={150} />
             <Text style={[styles.subtitleText, { marginTop: 16, fontSize: 16 }]}>
               {role === 'refugio' ? 'No has registrado mascotas aún' : 'No hay mascotas disponibles'}
             </Text>

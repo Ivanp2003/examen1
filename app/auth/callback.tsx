@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { router } from 'expo-router';
 import { supabase } from '../../src/infrastructure/api/supabase';
 
 const styles = StyleSheet.create({
@@ -13,78 +13,50 @@ const styles = StyleSheet.create({
 });
 
 export default function AuthCallback() {
-  const { access_token, refresh_token, error, error_description } = useLocalSearchParams();
-
   useEffect(() => {
-    async function handleCallback() {
-      console.log('🔗 Auth callback recibido');
-      console.log('🆔 access_token:', access_token ? 'presente' : 'ausente');
-      console.log('🆔 refresh_token:', refresh_token ? 'presente' : 'ausente');
-      console.log('❌ error:', error);
-      console.log('📝 error_description:', error_description);
-
-      if (error) {
-        console.error('❌ Error en OAuth:', error, error_description);
-        router.replace('/login');
-        return;
+    // Supabase ya maneja los tokens automáticamente.
+    // Solo escuchar el evento SIGNED_IN y redirigir.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Callback - auth event:', event);
+      if (event === 'SIGNED_IN' && session?.user) {
+        subscription.unsubscribe();
+        await createProfileIfNeeded(session.user);
+        router.replace('/(tabs)');
       }
+    });
 
-      if (access_token && refresh_token) {
-        try {
-          const { data, error: sessionError } = await supabase.auth.setSession({
-            access_token: access_token as string,
-            refresh_token: refresh_token as string,
-          });
-
-          if (sessionError) {
-            console.error('❌ Error estableciendo sesión:', sessionError);
-            router.replace('/login');
-            return;
-          }
-
-          console.log('✅ Sesión establecida exitosamente');
-          console.log('👤 Usuario:', data.user);
-
-          // Check if user exists in usuarios table
-          const { data: profile, error: profileError } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('id', data.user?.id)
-            .single();
-
-          if (profileError || !profile) {
-            console.log('📝 Usuario no existe en tabla usuarios, creando perfil...');
-            // Create user profile if it doesn't exist
-            const { error: insertError } = await supabase.from('usuarios').insert({
-              id: data.user?.id,
-              email: data.user?.email,
-              nombre: data.user?.user_metadata?.nombre || data.user?.user_metadata?.full_name || 'Usuario',
-              role: data.user?.user_metadata?.role || 'adoptante',
-              metadata: data.user?.user_metadata || {},
-            });
-
-            if (insertError) {
-              console.error('❌ Error creando perfil:', insertError);
-            } else {
-              console.log('✅ Perfil creado exitosamente');
-            }
-          } else {
-            console.log('✅ Perfil encontrado:', profile);
-          }
-
+    // Verificar si ya hay sesión activa (llegamos tarde al evento)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        console.log('✅ Sesión ya activa, redirigiendo...');
+        subscription.unsubscribe();
+        createProfileIfNeeded(session.user).then(() => {
           router.replace('/(tabs)');
-        } catch (err) {
-          console.error('❌ Error en callback:', err);
-          router.replace('/login');
-        }
-      } else {
-        console.error('❌ No se recibieron tokens');
-        router.replace('/login');
+        });
       }
-    }
+    });
 
-    handleCallback();
-  }, [access_token, refresh_token, error, error_description]);
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function createProfileIfNeeded(user: any) {
+    if (!user) return;
+    const { data: profile, error } = await supabase
+      .from('usuarios')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !profile) {
+      await supabase.from('usuarios').insert({
+        id: user.id,
+        email: user.email,
+        nombre: user.user_metadata?.full_name || 'Usuario',
+        role: 'adoptante',
+        metadata: user.user_metadata || {},
+      });
+    }
+  }
 
   return (
     <View style={styles.container}>

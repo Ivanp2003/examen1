@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
 import { RegisterUseCase } from '../src/application/use-cases/AuthUseCases';
 
@@ -245,7 +246,12 @@ export default function RegisterScreen() {
         <View style={styles.hero}>
           <View style={styles.heroContent}>
             <View style={styles.heroIcon}>
-              <Text style={styles.heroIconText}>🐾</Text>
+              <LottieView
+                source={require('../assets/animations/cat.json')}
+                autoPlay
+                loop
+                style={{ width: 56, height: 56 }}
+              />
             </View>
             <Text style={styles.heroTitle}>Crear Cuenta</Text>
             <Text style={styles.heroSubtitle}>Únete a la comunidad PetAdopt</Text>

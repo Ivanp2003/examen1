@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
-import Constants from 'expo-constants';
+import * as Linking from 'expo-linking';
+import LottieView from 'lottie-react-native';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
 import { LoginUseCase, LoginWithGoogleUseCase } from '../src/application/use-cases/AuthUseCases';
 import { useAppStore } from '../src/application/store/useAppStore';
@@ -220,7 +221,12 @@ export default function LoginScreen() {
         <View style={styles.heroGradient}>
           <View style={styles.heroContent}>
             <View style={styles.logoContainer}>
-              <Text style={styles.logoEmoji}>🐾</Text>
+              <LottieView
+                source={require('../assets/animations/dog.json')}
+                autoPlay
+                loop
+                style={{ width: 64, height: 64 }}
+              />
             </View>
             <Text style={styles.title}>PetAdopt</Text>
             <Text style={styles.subtitle}>
@@ -303,18 +309,18 @@ export default function LoginScreen() {
                   <TouchableOpacity
                     onPress={async () => {
                       try {
-                        // Forzamos el esquema nativo directo
-                        const redirectUrl = 'exp://192.168.110.186:8081/--/auth/callback';
-                        
-                        console.log('🔗 Disparando login con redirección directa a:', redirectUrl);
+                        // Usar el scheme de la app para deep linking correcto
+                        const redirectUrl = Linking.createURL('auth/callback');
+
+                        console.log('🔗 Disparando login con redirección a:', redirectUrl);
                         await loginWithGoogleUseCase.execute(redirectUrl);
                         // After successful Google auth, the callback will handle navigation
                       } catch (err: any) {
                         console.error('❌ Error en Google OAuth:', err);
-                        
+
                         // BYPASS DE EMERGENCIA PARA DEMO
                         console.warn('⚠️ Ejecutando Bypass de Google Login para entorno de demostración');
-                        
+
                         // Usuario mock para demostración usando ID real de la base de datos
                         const mockUser = {
                           id: 'a44d294a-bcc0-4ec4-bf75-222761315ec8', // ID real de usuario refugio
@@ -330,7 +336,7 @@ export default function LoginScreen() {
 
                         // Redirigimos al Home
                         router.replace('/(tabs)');
-                        
+
                         Alert.alert('Modo Demo', 'Sesión iniciada correctamente con perfil de respaldo.');
                       }
                     }}

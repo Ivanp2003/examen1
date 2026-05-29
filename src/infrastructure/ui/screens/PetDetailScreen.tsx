@@ -1,11 +1,11 @@
 import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
-import LottieView from 'lottie-react-native';
 import { Pet } from '../../../domain/entities/Pet';
 import { SupabasePetRepository } from '../../repositories/SupabasePetRepository';
 import { GetAvailablePetsUseCase } from '../../../application/use-cases/PetUseCases';
 import { Button } from '../components/Button';
+import { PawAnimation } from '../animations/PawAnimation';
 
 const petRepo = new SupabasePetRepository();
 const getPets = new GetAvailablePetsUseCase(petRepo);
@@ -167,7 +167,7 @@ export const PetDetailScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <LottieView source={require('../../../../assets/animations/loading.json')} autoPlay loop style={{ width: 120, height: 120 }} />
+        <PawAnimation size={120} />
       </View>
     );
   }

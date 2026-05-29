@@ -1,12 +1,12 @@
 import { View, Text, ScrollView, TextInput } from 'react-native';
 import { useState, useEffect, useCallback } from 'react';
 import { router } from 'expo-router';
-import LottieView from 'lottie-react-native';
 import { PetCard } from '../components/PetCard';
 import { MapPreview } from '../components/MapView';
 import { Pet } from '../../../domain/entities/Pet';
 import { SupabasePetRepository } from '../../repositories/SupabasePetRepository';
 import { GetAvailablePetsUseCase } from '../../../application/use-cases/PetUseCases';
+import { CatAnimation } from '../animations/CatAnimation';
 
 const petRepo = new SupabasePetRepository();
 const getPets = new GetAvailablePetsUseCase(petRepo);
@@ -48,7 +48,7 @@ export const ExploreScreen = () => {
         </Text>
         {results.length === 0 ? (
           <View className="items-center mt-8">
-            <LottieView source={require('../../../../assets/animations/empty.json')} autoPlay loop style={{ width: 120, height: 120 }} />
+            <CatAnimation size={120} />
             <Text className="text-text-secondary mt-4">Sin resultados</Text>
           </View>
         ) : (

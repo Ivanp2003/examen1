@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppStore } from '../../../application/store/useAppStore';
 import { SupabaseAuthRepository } from '../../repositories/SupabaseAuthRepository';
+import { DogAnimation } from '../animations/DogAnimation';
 
 const authRepo = new SupabaseAuthRepository();
 
@@ -190,7 +191,7 @@ export const ProfileScreen = () => {
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <View style={styles.headerContent}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{user?.nombre?.[0]?.toUpperCase() || '?'}</Text>
+              <DogAnimation size={80} />
             </View>
             <Text style={styles.name}>{user?.nombre || 'Usuario'}</Text>
             <View style={styles.roleBadge}>

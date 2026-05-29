@@ -7,6 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../src/infrastructure/api/supabase';
 import { router } from 'expo-router';
 import { useAppStore } from '../src/application/store/useAppStore';
+import { oauthCallback } from '../src/infrastructure/api/oauthCallback';
 import '../global.css';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -67,9 +68,11 @@ export default function RootLayout() {
 
     const handleOAuthCallback = async (url: string) => {
       if (url.includes('access_token') || url.includes('error_code') || url.includes('code')) {
-        console.log('🔗 OAuth callback URL:', url);
-        // Supabase automatically handles the session from the URL
-        // The auth state listener will handle the user update
+        console.log('🔗 OAuth callback URL:', url.substring(0, 80));
+        oauthCallback.setUrl(url);
+        console.log('💾 URL guardada en singleton, verificando:', oauthCallback.getUrl() ? 'OK' : 'FALLÓ');
+        // Navegar al callback screen
+        router.replace('/auth/callback');
       }
     };
 

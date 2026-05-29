@@ -24,6 +24,39 @@ const submitBtn = document.getElementById('submit-btn');
 // Initialize page based on type
 async function init() {
     try {
+        // Detectar si es un callback de OAuth (Google)
+        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+        const hashAccessToken = hashParams.get('access_token');
+        const hashRefreshToken = hashParams.get('refresh_token');
+        const code = urlParams.get('code');
+
+        if (hashAccessToken && hashRefreshToken) {
+            // OAuth callback con tokens en el hash
+            console.log('🔗 OAuth callback detectado con tokens en hash');
+            const { error } = await supabase.auth.setSession({
+                access_token: hashAccessToken,
+                refresh_token: hashRefreshToken,
+            });
+            if (error) throw error;
+
+            // Redirigir de vuelta a la app
+            window.location.href = 'petadopt://auth/callback#access_token=' + hashAccessToken + '&refresh_token=' + hashRefreshToken;
+            return;
+        }
+
+        if (code) {
+            // OAuth con PKCE flow
+            console.log('🔗 OAuth callback detectado con code');
+            const { error } = await supabase.auth.exchangeCodeForSession(code);
+            if (error) throw error;
+
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'petadopt://auth/callback#access_token=' + session.access_token + '&refresh_token=' + session.refresh_token;
+            }
+            return;
+        }
+
         if (type === 'signup') {
             // Handle email confirmation
             if (accessToken && refreshToken) {
