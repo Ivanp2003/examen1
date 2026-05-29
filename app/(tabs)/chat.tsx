@@ -197,15 +197,15 @@ export default function ChatRequestsScreen() {
                   <Text style={styles.sectionLabel}>Datos del Solicitante:</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                     <MaterialCommunityIcons name="home-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
-                    <Text style={styles.metaText}> Hogar: {metadata.homeType || 'No especificado'}</Text>
+                    <Text style={styles.metaText}> Hogar: {metadata.hogar || 'No especificado'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                     <MaterialCommunityIcons name="paw-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
-                    <Text style={styles.metaText}> Otras mascotas: {metadata.hasPets ? 'Sí' : 'No'}</Text>
+                    <Text style={styles.metaText}> Otras mascotas: {metadata.otros_mascotas ? 'Sí' : 'No'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                     <MaterialCommunityIcons name="pencil-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
-                    <Text style={styles.metaText}> Motivación: "{metadata.reason || item.notes || 'Sin comentarios adicionales'}"</Text>
+                    <Text style={styles.metaText}> Motivación: "{metadata.motivo || item.notes || 'Sin comentarios adicionales'}"</Text>
                   </View>
                   
                   {item.status === 'pendiente' && (

@@ -21,7 +21,7 @@ export class SupabaseAdoptionRepository implements IAdoptionRepository {
   async getRequestsByShelter(shelterId: string): Promise<AdoptionRequest[]> {
     const { data, error } = await supabase
       .from('solicitudes')
-      .select('*')
+      .select('*, mascotas(*)')
       .eq('shelter_id', shelterId)
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -31,7 +31,7 @@ export class SupabaseAdoptionRepository implements IAdoptionRepository {
   async getRequestsByApplicant(applicantId: string): Promise<AdoptionRequest[]> {
     const { data, error } = await supabase
       .from('solicitudes')
-      .select('*')
+      .select('*, mascotas(*)')
       .eq('applicant_id', applicantId)
       .order('created_at', { ascending: false });
     if (error) throw error;

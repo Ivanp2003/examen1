@@ -1,6 +1,7 @@
 import { User } from '../../domain/entities/User';
 import { IAuthRepository } from '../../domain/repositories/IAuthRepository';
 import { supabase } from '../api/supabase';
+import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -42,16 +43,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
     if (error) throw error;
 
     if (data.url) {
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl || 'petadopt://auth/callback');
-
-      if (result.type === 'cancel') {
-        throw new Error('Autenticación cancelada por el usuario');
-      }
-
-      if (result.type === 'success') {
-        // The callback page will handle the session
-        console.log('✅ OAuth completado, callback manejará la sesión');
-      }
+      await Linking.openURL(data.url);
     }
   }
 

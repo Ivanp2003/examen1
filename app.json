@@ -1,27 +1,37 @@
 {
   "expo": {
     "name": "PetAdopt",
-    "slug": "petadopt",
+    "slug": "ivanp2003-examen1",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "petadopt",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#4F46E5",
-      "resizeMode": "contain"
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF7ED"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.petadopt.app",
-      "newArchEnabled": false
+      "newArchEnabled": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#4F46E5"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#FFF7ED"
       },
-      "package": "com.petadopt.app",
-      "newArchEnabled": false,
+      "package": "com.ivanp2003.petadopt",
+      "newArchEnabled": true,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -37,13 +47,28 @@
     },
     "plugins": [
       "expo-router",
-      "expo-image-picker",
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location to find nearby shelters."
+          "locationWhenInUsePermission": "Permite que PetAdopt acceda a tu ubicación para mostrarte los refugios cercanos."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite que PetAdopt acceda a tu galería para subir la foto de la mascota."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "54229ebb-e2e8-4629-af8c-e2856e2b9f54"
+      }
+    },
+    "owner": "ivannandres",
+    "updates": {
+      "checkAutomatically": "NEVER"
+    }
   }
 }

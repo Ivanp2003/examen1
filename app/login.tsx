@@ -303,9 +303,7 @@ export default function LoginScreen() {
                   <TouchableOpacity
                     onPress={async () => {
                       try {
-                        // Usar el scheme de la app para deep linking correcto
                         const redirectUrl = Linking.createURL('auth/callback');
-
                         console.log('🔗 Disparando login con redirección a:', redirectUrl);
                         await loginWithGoogleUseCase.execute(redirectUrl);
                         // After successful Google auth, the callback will handle navigation
