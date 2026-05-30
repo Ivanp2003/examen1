@@ -1,9 +1,12 @@
 import { TouchableOpacity, Text, Image, View, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pet } from '../../../domain/entities/Pet';
 
 interface PetCardProps {
   pet: Pet;
   onPress: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const styles = StyleSheet.create({
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export const PetCard = ({ pet, onPress }: PetCardProps) => {
+export const PetCard = ({ pet, onPress, onEdit, onDelete }: PetCardProps) => {
   const getStatusStyle = () => {
     switch (pet.status) {
       case 'disponible':
@@ -124,11 +127,35 @@ export const PetCard = ({ pet, onPress }: PetCardProps) => {
       style={styles.card}
       activeOpacity={0.85}
     >
-      <Image
-        source={{ uri: pet.images[0] || 'https://via.placeholder.com/300' }}
-        style={styles.image}
-        resizeMode="cover"
-      />
+      <View style={{ position: 'relative' }}>
+        <Image
+          source={{ uri: pet.images[0] || 'https://via.placeholder.com/300' }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+        {(onEdit || onDelete) && (
+          <View style={{ position: 'absolute', top: 8, right: 8, flexDirection: 'row', gap: 8 }}>
+            {onEdit && (
+              <TouchableOpacity
+                onPress={(e) => { e.stopPropagation(); onEdit(); }}
+                activeOpacity={0.8}
+                style={{ backgroundColor: '#4F46E5', borderRadius: 20, padding: 8 }}
+              >
+                <MaterialCommunityIcons name="pencil" size={16} color="white" />
+              </TouchableOpacity>
+            )}
+            {onDelete && (
+              <TouchableOpacity
+                onPress={(e) => { e.stopPropagation(); onDelete(); }}
+                activeOpacity={0.8}
+                style={{ backgroundColor: '#EF4444', borderRadius: 20, padding: 8 }}
+              >
+                <MaterialCommunityIcons name="trash-can" size={16} color="white" />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      </View>
       <View style={styles.content}>
         <Text style={styles.name}>{pet.name}</Text>
         <View style={styles.infoRow}>

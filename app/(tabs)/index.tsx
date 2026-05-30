@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import tw from 'twrnc';
 
 import { Pet } from '../../src/domain/entities/Pet';
 import { SupabasePetRepository } from '../../src/infrastructure/repositories/SupabasePetRepository';
@@ -10,124 +11,8 @@ import { useAppStore } from '../../src/application/store/useAppStore';
 import { PetCard } from '../../src/infrastructure/ui/components/PetCard';
 import PawAnimation from '../../src/infrastructure/ui/animations/PawAnimation';
 
-const { width } = Dimensions.get('window');
-
 const petRepo = new SupabasePetRepository();
 const getPets = new GetAvailablePetsUseCase(petRepo);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF7ED',
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 32,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    backgroundColor: '#F4A261',
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerTitle: {
-    flex: 1,
-  },
-  headerSubtitle: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  headerTitleText: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  logoContainer: {
-    width: 48,
-    height: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#F1F3F5',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#F4A261',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6D597A',
-    marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#E8E8E8',
-  },
-  subtitleContainer: {
-    paddingHorizontal: 24,
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  subtitleText: {
-    fontSize: 14,
-    color: '#6D597A',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 32,
-    right: 24,
-    width: 64,
-    height: 64,
-    backgroundColor: '#F4A261',
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#F4A261',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  fabText: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    lineHeight: 32,
-  },
-  emptyButton: {
-    marginTop: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    backgroundColor: '#F4A261',
-    borderRadius: 16,
-  },
-  emptyButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-});
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -170,32 +55,68 @@ export default function HomeScreen() {
 
   const onRefresh = () => { setRefreshing(true); fetchPets(); };
 
+  const isOwner = (pet: Pet) => role === 'refugio' && pet.shelter_id === user?.id;
+
+  const handleDeletePet = (pet: Pet) => {
+    Alert.alert(
+      'Eliminar mascota',
+      `¿Estás seguro de que deseas eliminar a ${pet.name}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await petRepo.deletePet(pet.id);
+              setPets((prev) => prev.filter((p) => p.id !== pet.id));
+              Alert.alert('Éxito', 'Mascota eliminada correctamente.');
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'No se pudo eliminar la mascota.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEditPet = (petId: string) => {
+    router.push({ pathname: '/create-pet', params: { editId: petId } });
+  };
+
   const renderPet = ({ item }: { item: Pet }) => (
-    <PetCard pet={item} onPress={() => router.push(`/pet/${item.id}`)} />
+    <PetCard
+      pet={item}
+      onPress={() => router.push(`/pet/${item.id}`)}
+      onEdit={isOwner(item) ? () => handleEditPet(item.id) : undefined}
+      onDelete={isOwner(item) ? () => handleDeletePet(item) : undefined}
+    />
   );
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={tw`flex-1 bg-[#FFF7ED] items-center justify-center`}>
         <PawAnimation size={120} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={tw`flex-1 bg-[#FFF7ED]`}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTitle}>
-            <Text style={styles.headerSubtitle}>
+      <View
+        style={[tw`px-6 pb-8 rounded-b-[32px] bg-[#F4A261]`, { paddingTop: insets.top + 12 }]}
+      >
+        <View style={tw`flex-row items-center justify-between`}>
+          <View style={tw`flex-1`}>
+            <Text style={tw`text-sm text-white/80 font-medium`}>
               {role === 'refugio' ? 'Panel de gestión' : 'Descubre mascotas'}
             </Text>
-            <Text style={styles.headerTitleText}>
+            <Text style={tw`text-[28px] text-white font-bold mt-1`}>
               {role === 'refugio' ? 'Mis Mascotas' : 'Mascotas en Adopción'}
             </Text>
           </View>
-          <View style={styles.logoContainer}>
+          <View style={tw`w-12 h-12 bg-white/20 rounded-2xl items-center justify-center`}>
             <PawAnimation size={28} />
           </View>
         </View>
@@ -203,29 +124,29 @@ export default function HomeScreen() {
 
       {/* Stats for shelters */}
       {role === 'refugio' && pets.length > 0 && (
-        <View style={{ paddingHorizontal: 24, marginTop: -20 }}>
-          <View style={styles.statsCard}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{pets.length}</Text>
-              <Text style={styles.statLabel}>Total</Text>
+        <View style={tw`px-6 -mt-5`}>
+          <View style={tw`bg-white rounded-2xl p-4 shadow-sm border border-[#F1F3F5] flex-row justify-around`}>
+            <View style={tw`items-center`}>
+              <Text style={tw`text-2xl font-bold text-[#F4A261]`}>{pets.length}</Text>
+              <Text style={tw`text-xs text-[#6D597A] mt-1`}>Total</Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#84A98C' }]}>{pets.filter(p => p.status === 'disponible').length}</Text>
-              <Text style={styles.statLabel}>Disponibles</Text>
+            <View style={tw`w-px bg-[#E8E8E8]`} />
+            <View style={tw`items-center`}>
+              <Text style={tw`text-2xl font-bold text-[#84A98C]`}>{pets.filter(p => p.status === 'disponible').length}</Text>
+              <Text style={tw`text-xs text-[#6D597A] mt-1`}>Disponibles</Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: '#6D597A' }]}>{pets.filter(p => p.status === 'pendiente').length}</Text>
-              <Text style={styles.statLabel}>Pendientes</Text>
+            <View style={tw`w-px bg-[#E8E8E8]`} />
+            <View style={tw`items-center`}>
+              <Text style={tw`text-2xl font-bold text-[#6D597A]`}>{pets.filter(p => p.status === 'pendiente').length}</Text>
+              <Text style={tw`text-xs text-[#6D597A] mt-1`}>Pendientes</Text>
             </View>
           </View>
         </View>
       )}
 
       {/* Subtitle */}
-      <View style={styles.subtitleContainer}>
-        <Text style={styles.subtitleText}>
+      <View style={tw`px-6 mt-6 mb-4`}>
+        <Text style={tw`text-sm text-[#6D597A]`}>
           {role === 'refugio'
             ? 'Administra tus mascotas registradas'
             : `${pets.length} mascotas esperando un hogar`}
@@ -245,17 +166,17 @@ export default function HomeScreen() {
           colors={['#F4A261']}
         />}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', marginTop: 64 }}>
+          <View style={tw`items-center mt-16`}>
             <PawAnimation size={150} />
-            <Text style={[styles.subtitleText, { marginTop: 16, fontSize: 16 }]}>
+            <Text style={tw`text-base text-[#6D597A] mt-4`}>
               {role === 'refugio' ? 'No has registrado mascotas aún' : 'No hay mascotas disponibles'}
             </Text>
             {role === 'refugio' && (
               <TouchableOpacity
                 onPress={() => router.push('/create-pet')}
-                style={styles.emptyButton}
+                style={tw`mt-6 py-3 px-8 bg-[#F4A261] rounded-2xl`}
               >
-                <Text style={styles.emptyButtonText}>Registrar primera mascota</Text>
+                <Text style={tw`text-white font-bold`}>Registrar primera mascota</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -267,9 +188,9 @@ export default function HomeScreen() {
         <TouchableOpacity
           onPress={() => router.push('/create-pet')}
           activeOpacity={0.85}
-          style={styles.fab}
+          style={[tw`absolute bottom-8 right-6 w-16 h-16 bg-[#F4A261] rounded-full items-center justify-center shadow-lg`, { elevation: 8 }]}
         >
-          <Text style={styles.fabText}>+</Text>
+          <Text style={tw`text-white text-[32px] leading-8`}>+</Text>
         </TouchableOpacity>
       )}
     </View>

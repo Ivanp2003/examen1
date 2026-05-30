@@ -59,4 +59,20 @@ export class SupabasePetRepository implements IPetRepository {
       .eq('id', petId);
     if (error) throw error;
   }
+
+  async updatePet(petId: string, pet: Partial<Pet>): Promise<void> {
+    const { error } = await supabase
+      .from('mascotas')
+      .update(pet)
+      .eq('id', petId);
+    if (error) throw error;
+  }
+
+  async deletePet(petId: string): Promise<void> {
+    const { error } = await supabase
+      .from('mascotas')
+      .delete()
+      .eq('id', petId);
+    if (error) throw error;
+  }
 }

@@ -1,5 +1,6 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useState } from 'react';
+import tw from 'twrnc';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,142 +16,6 @@ const menuItems = [
   { label: 'Asistente IA', icon: 'lightbulb-outline' as const, desc: 'Consejos y recomendaciones', onPress: () => router.push('/ai-chat') },
   { label: 'Configuración', icon: 'cog-outline' as const, desc: 'Ajustes de la cuenta', onPress: () => router.push('/settings') },
 ];
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF7ED',
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 80,
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    backgroundColor: '#F4A261',
-  },
-  headerContent: {
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 96,
-    height: 96,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 36,
-    fontWeight: 'bold',
-  },
-  name: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  roleBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-    marginTop: 4,
-  },
-  roleBadgeText: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  email: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-    marginTop: 8,
-  },
-  menuContainer: {
-    paddingHorizontal: 24,
-    marginTop: -56,
-  },
-  menuCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#F1F3F5',
-    overflow: 'hidden',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-  },
-  menuItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-  },
-  menuIcon: {
-    width: 48,
-    height: 48,
-    backgroundColor: 'rgba(244, 162, 97, 0.1)',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuInfo: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  menuLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6D597A',
-  },
-  menuDesc: {
-    fontSize: 12,
-    color: '#6D597A',
-    marginTop: 2,
-  },
-  menuArrow: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#F1F3F5',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuArrowText: {
-    color: '#6D597A',
-    fontSize: 18,
-  },
-  logoutButton: {
-    marginTop: 24,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(109, 89, 122, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoutButtonText: {
-    color: '#6D597A',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  version: {
-    color: 'rgba(109, 89, 122, 0.4)',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 24,
-  },
-});
 
 const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
@@ -183,46 +48,46 @@ const ProfileScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={tw`flex-1 bg-[#FFF7ED]`}>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }} bounces={false}>
         {/* Profile Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-          <View style={styles.headerContent}>
-            <View style={styles.avatar}>
+        <View style={[tw`px-6 pb-20 rounded-b-[40px] bg-[#F4A261]`, { paddingTop: insets.top + 12 }]}>
+          <View style={tw`items-center`}>
+            <View style={tw`w-24 h-24 bg-white/20 rounded-full items-center justify-center mb-4 border-2 border-white/30`}>
               <DogAnimation size={80} />
             </View>
-            <Text style={styles.name}>{user?.nombre || 'Usuario'}</Text>
-            <View style={styles.roleBadge}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={tw`text-white text-2xl font-bold`}>{user?.nombre || 'Usuario'}</Text>
+            <View style={tw`bg-white/20 px-3 py-1 rounded-2xl mt-1`}>
+              <View style={tw`flex-row items-center`}>
                 <MaterialCommunityIcons name={user?.role === 'refugio' ? 'home' : 'heart'} size={14} color="rgba(255,255,255,0.9)" style={{ marginRight: 4 }} />
-                <Text style={styles.roleBadgeText}>
+                <Text style={tw`text-white/90 text-xs font-medium`}>
                   {user?.role === 'refugio' ? ' Refugio' : ' Adoptante'}
                 </Text>
               </View>
             </View>
-            <Text style={styles.email}>{user?.email}</Text>
+            <Text style={tw`text-white/70 text-sm mt-2`}>{user?.email}</Text>
           </View>
         </View>
 
         {/* Menu Cards */}
-        <View style={styles.menuContainer}>
-          <View style={styles.menuCard}>
+        <View style={tw`px-6 -mt-14`}>
+          <View style={tw`bg-white rounded-3xl shadow-sm border border-[#F1F3F5] overflow-hidden`}>
             {menuItems.map((item, i) => (
               <TouchableOpacity
                 key={i}
                 onPress={item.onPress}
                 activeOpacity={0.7}
-                style={[styles.menuItem, i < menuItems.length - 1 && styles.menuItemBorder]}
+                style={[tw`flex-row items-center p-5`, i < menuItems.length - 1 ? tw`border-b border-[#F1F3F5]` : {}]}
               >
-                <View style={styles.menuIcon}>
+                <View style={tw`w-12 h-12 bg-[#F4A261]/10 rounded-2xl items-center justify-center`}>
                   <MaterialCommunityIcons name={item.icon} size={24} color="#6D597A" />
                 </View>
-                <View style={styles.menuInfo}>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
-                  <Text style={styles.menuDesc}>{item.desc}</Text>
+                <View style={tw`flex-1 ml-4`}>
+                  <Text style={tw`text-base font-semibold text-[#6D597A]`}>{item.label}</Text>
+                  <Text style={tw`text-xs text-[#6D597A] mt-0.5`}>{item.desc}</Text>
                 </View>
-                <View style={styles.menuArrow}>
-                  <Text style={styles.menuArrowText}>›</Text>
+                <View style={tw`w-8 h-8 bg-[#F1F3F5] rounded-full items-center justify-center`}>
+                  <Text style={tw`text-[#6D597A] text-lg`}>›</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -233,17 +98,17 @@ const ProfileScreen = () => {
             onPress={handleLogout}
             activeOpacity={0.8}
             disabled={loading}
-            style={styles.logoutButton}
+            style={tw`mt-6 py-4 rounded-2xl bg-white border border-[#6D597A]/20 items-center justify-center`}
           >
             {loading ? (
-              <Text style={styles.logoutButtonText}>Cerrando sesión...</Text>
+              <Text style={tw`text-[#6D597A] font-bold text-base`}>Cerrando sesión...</Text>
             ) : (
-              <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+              <Text style={tw`text-[#6D597A] font-bold text-base`}>Cerrar Sesión</Text>
             )}
           </TouchableOpacity>
 
           {/* Version */}
-          <Text style={styles.version}>PetAdopt v1.0.0</Text>
+          <Text style={tw`text-[#6D597A]/40 text-xs text-center mt-6`}>PetAdopt v1.0.0</Text>
         </View>
       </ScrollView>
     </View>

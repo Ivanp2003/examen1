@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   TouchableOpacity,
   Image,
   ActivityIndicator,
   Alert
 } from 'react-native';
+import tw from 'twrnc';
+import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../src/application/store/useAppStore';
 import { SupabaseAdoptionRepository } from '../../src/infrastructure/repositories/SupabaseAdoptionRepository';
@@ -126,26 +127,26 @@ export default function ChatRequestsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={tw`flex-1 bg-[#FFF7ED] justify-center items-center p-6`}>
         <ActivityIndicator size="large" color="#6D597A" />
-        <Text style={styles.loadingText}>Cargando solicitudes...</Text>
+        <Text style={tw`mt-3 text-[#6D597A] text-base`}>Cargando solicitudes...</Text>
       </View>
     );
   }
 
   if (requests.length === 0) {
     return (
-      <View style={styles.center}>
+      <View style={tw`flex-1 bg-[#FFF7ED] justify-center items-center p-6`}>
         <MaterialCommunityIcons name="chat-outline" size={48} color="#6D597A" style={{ marginBottom: 16 }} />
-        <Text style={styles.emptyText}>No tienes solicitudes registradas en este momento.</Text>
+        <Text style={tw`text-base text-[#6D597A] text-center`}>No tienes solicitudes registradas en este momento.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerTitle}>Panel de Solicitudes</Text>
-      <Text style={styles.headerSubtitle}>
+    <View style={tw`flex-1 bg-[#FFF7ED] pt-[60px] px-4`}>
+      <Text style={tw`text-2xl font-bold text-[#6D597A] mb-1`}>Panel de Solicitudes</Text>
+      <Text style={tw`text-sm text-[#8A7A93] mb-5`}>
         {isShelter ? "Administra las adopciones de tu refugio" : "Historial de tus procesos de adopción"}
       </Text>
 
@@ -159,32 +160,28 @@ export default function ChatRequestsScreen() {
           const metadata = item.applicant_metadata || {};
 
           return (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
+            <View style={tw`bg-white rounded-2xl p-4 mb-4 border border-[#FFEDD5] shadow-sm`}>
+              <View style={tw`flex-row items-center`}>
                 {mascota?.image_url ? (
-                  <Image source={{ uri: mascota.image_url }} style={styles.petImage} />
+                  <Image source={{ uri: mascota.image_url }} style={tw`w-[50px] h-[50px] rounded-full mr-3`} />
                 ) : (
-                  <View style={[styles.petImage, { backgroundColor: '#FFEEDD', justifyContent: 'center', alignItems: 'center' }]}>
+                  <View style={tw`w-[50px] h-[50px] rounded-full mr-3 bg-[#FFEEDD] justify-center items-center`}>
                     <MaterialCommunityIcons name="paw" size={24} color="#F4A261" />
                   </View>
                 )}
-                <View style={styles.petInfo}>
-                  <Text style={styles.petName}>{mascota?.name || 'Mascota'}</Text>
-                  <Text style={styles.petBreed}>{mascota?.breed || 'Raza no especificada'}</Text>
+                <View style={tw`flex-1`}>
+                  <Text style={tw`text-lg font-bold text-[#6D597A]`}>{mascota?.name || 'Mascota'}</Text>
+                  <Text style={tw`text-xs text-[#8A7A93]`}>{mascota?.breed || 'Raza no especificada'}</Text>
                 </View>
 
                 {/* Badge de estado */}
-                <View style={[
-                  styles.badge, 
-                  item.status === 'aprobado' && styles.badgeApproved,
-                  item.status === 'rechazado' && styles.badgeRejected,
-                  item.status === 'pendiente' && styles.badgePending
+                <View style={[tw`px-2.5 py-1 rounded-xl`,
+                  item.status === 'aprobado' ? tw`bg-[#D1FAE5]` :
+                  item.status === 'rechazado' ? tw`bg-[#FEE2E2]` : tw`bg-[#FEF3C7]`
                 ]}>
-                  <Text style={[
-                    styles.badgeText,
-                    item.status === 'aprobado' && styles.textApproved,
-                    item.status === 'rechazado' && styles.textRejected,
-                    item.status === 'pendiente' && styles.textPending
+                  <Text style={[tw`text-[11px] font-bold`,
+                    item.status === 'aprobado' ? tw`text-[#065F46]` :
+                    item.status === 'rechazado' ? tw`text-[#991B1B]` : tw`text-[#B45309]`
                   ]}>
                     {item.status.toUpperCase()}
                   </Text>
@@ -193,63 +190,97 @@ export default function ChatRequestsScreen() {
 
               {/* Si es Refugio, mostramos los datos del perfil del adoptante */}
               {isShelter && (
-                <View style={styles.metadataContainer}>
-                  <Text style={styles.sectionLabel}>Datos del Solicitante:</Text>
+                <View style={tw`mt-3 pt-3 border-t border-[#F7F2FA]`}>
+                  <Text style={tw`text-[13px] font-bold text-[#6D597A] mb-1`}>Datos del Solicitante:</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                     <MaterialCommunityIcons name="home-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
-                    <Text style={styles.metaText}> Hogar: {metadata.hogar || 'No especificado'}</Text>
+                    <Text style={tw`text-[13px] text-[#554461]`}> Hogar: {metadata.hogar || 'No especificado'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                     <MaterialCommunityIcons name="paw-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
-                    <Text style={styles.metaText}> Otras mascotas: {metadata.otros_mascotas ? 'Sí' : 'No'}</Text>
+                    <Text style={tw`text-[13px] text-[#554461]`}> Otras mascotas: {metadata.otros_mascotas ? 'Sí' : 'No'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                     <MaterialCommunityIcons name="pencil-outline" size={14} color="#554461" style={{ marginRight: 4 }} />
-                    <Text style={styles.metaText}> Motivación: "{metadata.motivo || item.notes || 'Sin comentarios adicionales'}"</Text>
+                    <Text style={tw`text-[13px] text-[#554461]`}> Motivación: "{metadata.motivo || item.notes || 'Sin comentarios adicionales'}"</Text>
                   </View>
                   
                   {item.status === 'pendiente' && (
-                    <View style={styles.actions}>
-                      <TouchableOpacity 
-                        style={[styles.btn, styles.btnReject]} 
+                    <View style={tw`flex-row justify-end mt-3 gap-2`}>
+                      <TouchableOpacity
+                        style={tw`py-2 px-3.5 rounded-lg justify-center items-center bg-[#FEE2E2] border border-[#FCA5A5]`}
                         onPress={() => handleUpdateStatus(item.id, 'rechazado')}
                       >
-                        <Text style={styles.btnText}>Rechazar</Text>
+                        <Text style={tw`text-[13px] font-bold text-white`}>Rechazar</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.btn, styles.btnApprove]} 
+                      <TouchableOpacity
+                        style={tw`py-2 px-3.5 rounded-lg justify-center items-center bg-[#10B981]`}
                         onPress={() => handleUpdateStatus(item.id, 'aprobado')}
                       >
-                        <Text style={styles.btnText}>Aceptar Adopción</Text>
+                        <Text style={tw`text-[13px] font-bold text-white`}>Aceptar Adopción</Text>
                       </TouchableOpacity>
                     </View>
                   )}
+
+                  {/* Botón de Chat para coordinar visita */}
+                  <TouchableOpacity
+                    style={tw`py-2 px-3.5 rounded-lg justify-center items-center bg-[#E0E7FF] border border-[#818CF8] mt-2`}
+                    onPress={() => router.push({
+                      pathname: '/chat-room',
+                      params: {
+                        adoptionRequestId: item.id,
+                        receiverId: item.applicant_id,
+                        petName: mascota?.name || 'Chat',
+                      }
+                    })}
+                  >
+                    <Text style={tw`text-[13px] font-bold text-[#4F46E5]`}>
+                      <MaterialCommunityIcons name="chat" size={14} color="#4F46E5" />  Coordinar Visita
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
               {/* Si es Adoptante, mostramos un mensaje informativo */}
               {!isShelter && (
-                <View style={styles.metadataContainer}>
-                  <Text style={styles.metaText}>
+                <View style={tw`mt-3 pt-3 border-t border-[#F7F2FA]`}>
+                  <Text style={tw`text-[13px] text-[#554461] mb-0.5`}>
                     {item.status === 'pendiente' && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={tw`flex-row items-center`}>
                         <MaterialCommunityIcons name="clock-outline" size={14} color="#B45309" style={{ marginRight: 4 }} />
-                        <Text style={styles.metaText}> El refugio está evaluando tu perfil. Te notificaremos pronto.</Text>
+                        <Text style={tw`text-[13px] text-[#554461]`}> El refugio está evaluando tu perfil. Te notificaremos pronto.</Text>
                       </View>
                     )}
                     {item.status === 'aprobado' && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={tw`flex-row items-center`}>
                         <MaterialCommunityIcons name="emoticon-happy-outline" size={14} color="#065F46" style={{ marginRight: 4 }} />
-                        <Text style={styles.metaText}> ¡Felicidades! Tu solicitud fue aprobada. El refugio se contactará contigo.</Text>
+                        <Text style={tw`text-[13px] text-[#554461]`}> ¡Felicidades! Tu solicitud fue aprobada. El refugio se contactará contigo.</Text>
                       </View>
                     )}
                     {item.status === 'rechazado' && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={tw`flex-row items-center`}>
                         <MaterialCommunityIcons name="close-circle-outline" size={14} color="#991B1B" style={{ marginRight: 4 }} />
-                        <Text style={styles.metaText}> Lamentablemente la solicitud no fue aceptada esta vez.</Text>
+                        <Text style={tw`text-[13px] text-[#554461]`}> Lamentablemente la solicitud no fue aceptada esta vez.</Text>
                       </View>
                     )}
                   </Text>
+
+                  {/* Botón de Chat para el adoptante */}
+                  <TouchableOpacity
+                    style={tw`py-2 px-3.5 rounded-lg justify-center items-center bg-[#E0E7FF] border border-[#818CF8] mt-2`}
+                    onPress={() => router.push({
+                      pathname: '/chat-room',
+                      params: {
+                        adoptionRequestId: item.id,
+                        receiverId: item.shelter_id,
+                        petName: mascota?.name || 'Chat',
+                      }
+                    })}
+                  >
+                    <Text style={tw`text-[13px] font-bold text-[#4F46E5]`}>
+                      <MaterialCommunityIcons name="chat" size={14} color="#4F46E5" />  Coordinar Visita
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -259,133 +290,3 @@ export default function ChatRequestsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF7ED',
-    paddingTop: 60,
-    paddingHorizontal: 16,
-  },
-  center: {
-    flex: 1,
-    backgroundColor: '#FFF7ED',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#6D597A',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#8A7A93',
-    marginBottom: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#6D597A',
-    fontSize: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6D597A',
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#FFEDD5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  petImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
-  petInfo: {
-    flex: 1,
-  },
-  petName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#6D597A',
-  },
-  petBreed: {
-    fontSize: 12,
-    color: '#8A7A93',
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgePending: { backgroundColor: '#FEF3C7' },
-  badgeApproved: { backgroundColor: '#D1FAE5' },
-  badgeRejected: { backgroundColor: '#FEE2E2' },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  textPending: { color: '#B45309' },
-  textApproved: { color: '#065F46' },
-  textRejected: { color: '#991B1B' },
-  metadataContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F7F2FA',
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#6D597A',
-    marginBottom: 4,
-  },
-  metaText: {
-    fontSize: 13,
-    color: '#554461',
-    marginBottom: 2,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 12,
-    gap: 8,
-  },
-  btn: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnReject: {
-    backgroundColor: '#FEE2E2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-  },
-  btnApprove: {
-    backgroundColor: '#10B981',
-  },
-  btnText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-});

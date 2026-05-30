@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Alert, Platform, ToastAndroid } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity, Alert, Platform, ToastAndroid } from 'react-native';
+import tw from 'twrnc';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { supabase } from '../../src/infrastructure/api/supabase';
@@ -14,95 +15,6 @@ interface Shelter {
   description: string;
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#FFF7ED',
-  },
-  saveButton: {
-    position: 'absolute',
-    top: 24,
-    right: 16,
-    backgroundColor: '#6D597A',
-    borderRadius: 24,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  map: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF7ED',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6D597A',
-    fontWeight: '500',
-  },
-  distanceCard: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#F1F3F5',
-  },
-  distanceTitle: {
-    fontSize: 14,
-    color: '#6D597A',
-    fontWeight: '500',
-  },
-  distanceValue: {
-    fontSize: 24,
-    color: '#F4A261',
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  distanceShelter: {
-    fontSize: 16,
-    color: '#6D597A',
-    marginTop: 4,
-  },
-  clearButton: {
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#F4A261',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-});
 
 // Refugios de fallback para demostración (coordenadas Quito/EPN)
 const FALLBACK_SHELTERS: Shelter[] = [
@@ -296,9 +208,9 @@ export default function ExploreScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={tw`flex-1 justify-center items-center bg-[#FFF7ED]`}>
         <ActivityIndicator size="large" color="#F4A261" />
-        <Text style={styles.loadingText}>Cargando mapa...</Text>
+        <Text style={tw`mt-4 text-base text-[#6D597A] font-medium`}>Cargando mapa...</Text>
       </View>
     );
   }
@@ -318,9 +230,9 @@ export default function ExploreScreen() {
       };
 
   return (
-    <View style={styles.container}>
+    <View style={tw`flex-1 w-full h-full bg-[#FFF7ED]`}>
       <MapView
-        style={styles.map}
+        style={tw`flex-1 w-full h-full`}
         initialRegion={region}
         showsUserLocation
         showsMyLocationButton
@@ -385,16 +297,16 @@ export default function ExploreScreen() {
       {user?.role === 'refugio' && (
         <TouchableOpacity
           activeOpacity={0.9}
-          style={styles.saveButton}
+          style={[tw`absolute top-6 right-4 bg-[#6D597A] rounded-3xl py-2.5 px-3.5 shadow-sm`, { elevation: 4 }]}
           onPress={saveShelterLocation}
           disabled={saving || (!pendingLocation && !userLocation)}
         >
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={tw`flex-row items-center`}>
               <MaterialCommunityIcons name="content-save-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.saveButtonText}>
+              <Text style={tw`text-white font-semibold text-[13px]`}>
                 {pendingLocation ? 'Guardar ubicación seleccionada' : 'Guardar mi ubicación actual'}
               </Text>
             </View>
@@ -404,12 +316,12 @@ export default function ExploreScreen() {
 
       {/* Card de distancia */}
       {selectedShelter && distance !== null && (
-        <View style={styles.distanceCard}>
-          <Text style={styles.distanceTitle}>Distancia al refugio</Text>
-          <Text style={styles.distanceValue}>{distance.toFixed(2)} km</Text>
-          <Text style={styles.distanceShelter}>{selectedShelter.nombre}</Text>
-          <TouchableOpacity style={styles.clearButton} onPress={clearSelection}>
-            <Text style={styles.clearButtonText}>Limpiar selección</Text>
+        <View style={tw`absolute bottom-6 left-4 right-4 bg-white rounded-2xl p-4 shadow-sm border border-[#F1F3F5]`}>
+          <Text style={tw`text-sm text-[#6D597A] font-medium`}>Distancia al refugio</Text>
+          <Text style={tw`text-2xl text-[#F4A261] font-bold mt-1`}>{distance.toFixed(2)} km</Text>
+          <Text style={tw`text-base text-[#6D597A] mt-1`}>{selectedShelter.nombre}</Text>
+          <TouchableOpacity style={tw`mt-3 py-2 px-4 bg-[#F4A261] rounded-lg items-center`} onPress={clearSelection}>
+            <Text style={tw`text-white font-semibold text-sm`}>Limpiar selección</Text>
           </TouchableOpacity>
         </View>
       )}
