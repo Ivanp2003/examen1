@@ -1,13 +1,12 @@
 import '../global.css';
-import { Stack } from 'expo-router';
+import { Stack, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import Constants, { AppOwnership } from 'expo-constants';
 import { supabase } from '../src/infrastructure/api/supabase';
-import { router } from 'expo-router';
 import { useAppStore } from '../src/application/store/useAppStore';
 import { oauthCallback } from '../src/infrastructure/api/oauthCallback';
 
@@ -23,6 +22,12 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
   const setUser = useAppStore((state) => state.setUser);
+  const segments = useSegments();
+  const router = useRouter();
+  const segmentsRef = useRef(segments);
+  segmentsRef.current = segments;
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   useEffect(() => {
     // Inicialización segura de notificaciones (solo fuera de Expo Go)
@@ -51,6 +56,12 @@ export default function RootLayout() {
     // Listener para cambios de sesión de Supabase
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth state change:', event, session?.user?.id);
+
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('🔑 Recuperación de contraseña - redirigiendo a reset');
+        routerRef.current.replace('/auth/reset');
+        return;
+      }
 
       if (session?.user) {
         // Obtener los datos del perfil de la tabla usuarios
@@ -92,9 +103,18 @@ export default function RootLayout() {
           created_at: profile?.created_at || session.user.created_at,
         });
         console.log('✅ Usuario actualizado en store:', session.user.id);
+
+        // Redirigir si está en pantallas de auth
+        const inAuthGroup = segmentsRef.current[0] === 'login' || segmentsRef.current[0] === 'register' || segmentsRef.current[0] === 'auth';
+        if (inAuthGroup) {
+          console.log('🚀 Redirigiendo desde auth screen al catálogo');
+          WebBrowser.dismissBrowser();
+          routerRef.current.replace('/(tabs)');
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         console.log('👋 Usuario deslogueado');
+        routerRef.current.replace('/login');
       }
     });
 
@@ -103,8 +123,7 @@ export default function RootLayout() {
         console.log('🔗 OAuth callback URL:', url.substring(0, 80));
         oauthCallback.setUrl(url);
         console.log('💾 URL guardada en singleton, verificando:', oauthCallback.getUrl() ? 'OK' : 'FALLÓ');
-        // Navegar al callback screen
-        router.replace('/auth/callback');
+        routerRef.current.replace('/auth/callback');
       }
     };
 
@@ -194,7 +213,7 @@ export default function RootLayout() {
   }, [setUser]);
 
   return (
-    <GestureHandlerRootView className="flex-1">
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />

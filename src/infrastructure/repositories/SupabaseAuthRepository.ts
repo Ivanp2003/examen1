@@ -35,7 +35,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: redirectUrl || 'petadopt://auth/callback',
+        redirectTo: redirectUrl || Linking.createURL('auth/callback'),
         skipBrowserRedirect: true,
       },
     });
@@ -43,7 +43,9 @@ export class SupabaseAuthRepository implements IAuthRepository {
     if (error) throw error;
 
     if (data.url) {
-      await Linking.openURL(data.url);
+      await WebBrowser.openBrowserAsync(data.url);
+    } else {
+      throw new Error('No se recibió URL de autorización');
     }
   }
 

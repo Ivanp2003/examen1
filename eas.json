@@ -12,14 +12,12 @@
       "android": {
         "buildType": "apk"
       },
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://emmqczfbbarxxzzeiwrn.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_jxCAFiBZVS7jpt8V7b9woQ_r17bR5V5",
-        "EXPO_PUBLIC_OPENROUTER_API_KEY": "$EXPO_PUBLIC_OPENROUTER_API_KEY"
-      }
+      "distribution": "internal"
     },
     "production": {
+      "android": {
+        "buildType": "apk"
+      },
       "autoIncrement": true
     }
   },

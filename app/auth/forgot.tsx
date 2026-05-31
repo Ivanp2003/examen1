@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { SupabaseAuthRepository } from '../../src/infrastructure/repositories/SupabaseAuthRepository';
-
-const authRepo = new SupabaseAuthRepository();
+import * as Linking from 'expo-linking';
+import { supabase } from '../../src/infrastructure/api/supabase';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF7ED' },
@@ -23,19 +22,23 @@ export default function ForgotPassword() {
   const [sending, setSending] = useState(false);
 
   const handleSend = async () => {
-    if (!email.trim()) {
-      Alert.alert('Recuperar contraseña', 'Ingresa tu correo');
-      return;
-    }
-    setSending(true);
     try {
-      // Redirige a la app para que el callback capture el evento PASSWORD_RECOVERY
-      const redirectTo = 'petadopt://auth/callback';
-      await authRepo.resetPassword(email.trim(), redirectTo);
-      Alert.alert('Recuperar contraseña', 'Si el correo existe, recibirás un enlace para restablecerla.');
+      setSending(true);
+
+      // Generamos la URL nativa (dará exp://... en desarrollo y petadopt://... en el APK)
+      const redirectToUrl = Linking.createURL('auth/callback');
+      console.log('🔗 Solicitando recuperación con redirección directa a:', redirectToUrl);
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: redirectToUrl,
+      });
+
+      if (error) throw error;
+      Alert.alert('Correo enviado', 'Revisa tu bandeja de entrada para restablecer tu contraseña.');
       router.back();
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'No se pudo enviar el correo.');
+    } catch (err: any) {
+      console.error('❌ Error al enviar correo de recuperación:', err);
+      Alert.alert('Error', err.message || 'No se pudo enviar el correo de recuperación.');
     } finally {
       setSending(false);
     }

@@ -1,104 +1,66 @@
 import { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
 import * as Linking from 'expo-linking';
 import { supabase } from '../../src/infrastructure/api/supabase';
 import { oauthCallback } from '../../src/infrastructure/api/oauthCallback';
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF7ED',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+import tw from 'twrnc';
 
 export default function AuthCallback() {
+  const linkingUrl = Linking.useURL();
+
   useEffect(() => {
-    // Manejo de eventos de auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Callback - auth event:', event);
-      if (event === 'PASSWORD_RECOVERY') {
-        // Navegar a restablecer contraseña
-        router.replace('/auth/reset');
-        return;
-      }
-      if (event === 'SIGNED_IN' && session?.user) {
-        subscription.unsubscribe();
-        await createProfileIfNeeded(session.user);
-        router.replace('/(tabs)');
-      }
-    });
-
-    // Intentar parsear tokens desde el enlace profundo (recuperación)
-    const handleUrl = async (url: string) => {
+    const createSessionFromUrl = async (urlStr: string) => {
       try {
-        const parsed = Linking.parse(url);
-        const params = parsed.queryParams || {} as Record<string, string>;
-        // Algunos proveedores colocan en el hash
-        const hash = (url.split('#')[1] || '').split('&').reduce((acc, kv) => {
-          const [k, v] = kv.split('=');
-          if (k && v) acc[decodeURIComponent(k)] = decodeURIComponent(v);
-          return acc;
-        }, {} as Record<string, string>);
-        const type = (params.type || hash.type) as string | undefined;
-        const access_token = (params.access_token || hash.access_token) as string | undefined;
-        const refresh_token = (params.refresh_token || hash.refresh_token) as string | undefined;
+        console.log("🔗 Analizando URL cruda en callback:", urlStr);
 
-        if (access_token && refresh_token) {
-          console.log('🔑 Estableciendo sesión desde deep link');
-          await supabase.auth.setSession({ access_token, refresh_token });
-          if (type === 'recovery') {
-            router.replace('/auth/reset');
-            return;
-          }
+        // 🛠️ EXTRACCIÓN MANUAL QUIRÚRGICA: Supabase manda los datos en el fragmento '#'
+        let accessToken = '';
+        let refreshToken = '';
+
+        // Buscamos el access_token en el string
+        const accessMatch = urlStr.match(/access_token=([^&]+)/);
+        if (accessMatch) accessToken = accessMatch[1];
+
+        // Buscamos el refresh_token en el string
+        const refreshMatch = urlStr.match(/refresh_token=([^&]+)/);
+        if (refreshMatch) refreshToken = refreshMatch[1];
+
+        if (accessToken && refreshToken) {
+          console.log("🔑 Tokens detectados con éxito. Estableciendo sesión...");
+
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) throw error;
+
+          console.log("✅ Sesión inyectada en Supabase correctamente.");
+        } else {
+          console.warn("⚠️ No se encontraron tokens de acceso en el hash de la URL.");
         }
-      } catch (e) {
-        console.warn('No se pudo procesar el deep link de callback:', e);
+      } catch (err) {
+        console.error("❌ Error crítico en el proceso del callback:", err);
       }
     };
 
-    // Usar URL guardada por RootLayout si existe (evita perder el enlace original)
-    const savedUrl = oauthCallback.getUrl();
-    if (savedUrl) {
-      handleUrl(savedUrl);
-      oauthCallback.clear();
+    // El Singleton es más confiable (lo seteamos desde login.tsx al recibir success de openAuthSessionAsync).
+    // Linking.useURL() puede no incluir el fragmento en algunas plataformas.
+    const urlDesdeSingleton = oauthCallback.getUrl();
+    const urlToProcess = urlDesdeSingleton || linkingUrl;
+
+    if (urlToProcess) {
+      createSessionFromUrl(urlToProcess);
+      // Limpiamos el singleton para que no repita el bucle en el próximo inicio
+      if (urlDesdeSingleton) oauthCallback.clear();
+    } else {
+      console.log("⏳ Esperando URL de OAuth...");
     }
-
-    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
-    Linking.getInitialURL().then((url) => {
-      if (url) handleUrl(url);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      sub.remove();
-    };
-  }, []);
-
-  async function createProfileIfNeeded(user: any) {
-    if (!user) return;
-    const { data: profile, error } = await supabase
-      .from('usuarios')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-
-    if (error || !profile) {
-      await supabase.from('usuarios').insert({
-        id: user.id,
-        email: user.email,
-        nombre: user.user_metadata?.full_name || 'Usuario',
-        role: 'adoptante',
-        metadata: user.user_metadata || {},
-      });
-    }
-  }
+  }, [linkingUrl]);
 
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color="#F4A261" />
+    <View style={tw`flex-1 justify-center items-center bg-white`}>
+      <ActivityIndicator size="large" color="#FF6B6B" />
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
@@ -192,7 +192,25 @@ const styles = StyleSheet.create({
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const setUser = useAppStore((state) => state.setUser);
+  const user = useAppStore((state) => state.user);
+
+  // Fallback: si el usuario ya está autenticado (por ejemplo tras OAuth), redirigir y apagar spinner
+  useEffect(() => {
+    if (user) {
+      setGoogleLoading(false);
+      router.replace('/(tabs)');
+    }
+  }, [user]);
+
+  // Timeout de seguridad: si Google OAuth tarda más de 30s, resetear el spinner
+  useEffect(() => {
+    if (googleLoading) {
+      const timer = setTimeout(() => setGoogleLoading(false), 30000);
+      return () => clearTimeout(timer);
+    }
+  }, [googleLoading]);
 
   const form = useForm({
     defaultValues: { email: '', password: '' },
@@ -303,19 +321,28 @@ export default function LoginScreen() {
                   <TouchableOpacity
                     onPress={async () => {
                       try {
+                        setGoogleLoading(true);
                         const redirectUrl = Linking.createURL('auth/callback');
-                        console.log('🔗 Disparando login con redirección a:', redirectUrl);
+                        console.log('🔗 Abriendo navegador para Google OAuth...');
+
+                        // openBrowserAsync abre el navegador y resuelve cuando se cierra.
+                        // El redirect a exp:// es capturado por Linking.addEventListener en _layout.tsx
                         await loginWithGoogleUseCase.execute(redirectUrl);
-                        // After successful Google auth, the callback will handle navigation
+
+                        // Al volver del navegador: si el Linking event ya procesó la auth,
+                        // el usuario ya fue navegado a /(tabs) y este componente se desmontó.
+                        // Si no, reseteamos el loading.
+                        if (!useAppStore.getState().user) {
+                          setGoogleLoading(false);
+                        }
                       } catch (err: any) {
                         console.error('❌ Error en Google OAuth:', err);
+                        setGoogleLoading(false);
 
-                        // BYPASS DE EMERGENCIA PARA DEMO
                         console.warn('⚠️ Ejecutando Bypass de Google Login para entorno de demostración');
 
-                        // Usuario mock para demostración usando ID real de la base de datos
                         const mockUser = {
-                          id: 'a44d294a-bcc0-4ec4-bf75-222761315ec8', // ID real de usuario refugio
+                          id: 'a44d294a-bcc0-4ec4-bf75-222761315ec8',
                           email: 'kogamaandres@gmail.com',
                           role: 'refugio' as const,
                           nombre: 'Iván Andrés Panchi Chávez',
@@ -323,20 +350,23 @@ export default function LoginScreen() {
                           created_at: new Date().toISOString(),
                         };
 
-                        // Inyectamos el usuario directamente en el Zustand Store
                         setUser(mockUser);
-
-                        // Redirigimos al Home
                         router.replace('/(tabs)');
-
                         Alert.alert('Modo Demo', 'Sesión iniciada correctamente con perfil de respaldo.');
                       }
                     }}
                     activeOpacity={0.85}
-                    style={styles.googleButton}
+                    disabled={googleLoading}
+                    style={[styles.googleButton, googleLoading && { opacity: 0.7 }]}
                   >
-                    <MaterialCommunityIcons name="google" size={24} color="#6D597A" />
-                    <Text style={styles.googleButtonText}>Continuar con Google</Text>
+                    {googleLoading ? (
+                      <ActivityIndicator color="#6D597A" />
+                    ) : (
+                      <>
+                        <MaterialCommunityIcons name="google" size={24} color="#6D597A" />
+                        <Text style={styles.googleButtonText}>Continuar con Google</Text>
+                      </>
+                    )}
                   </TouchableOpacity>
                 </>
               )}
