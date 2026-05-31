@@ -126,6 +126,7 @@ export default function ChatRequestsScreen() {
   };
 
   if (loading) {
+    console.log('🌀 RENDER LOADER desde ChatRequestsScreen — loading:', loading, 'user:', user?.id ?? 'null');
     return (
       <View style={tw`flex-1 bg-[#FFF7ED] justify-center items-center p-6`}>
         <ActivityIndicator size="large" color="#6D597A" />

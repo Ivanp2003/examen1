@@ -92,6 +92,7 @@ export default function GoogleLoginScreen() {
   }
 
   if (!authUrl) {
+    console.log('🌀 RENDER LOADER desde GoogleLoginScreen — authUrl es null');
     return (
       <View style={tw`flex-1 justify-center items-center bg-[#FFF7ED]`}>
         <ActivityIndicator size="large" color="#F4A261" />

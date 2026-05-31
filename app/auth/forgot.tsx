@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import * as Linking from 'expo-linking';
 import { supabase } from '../../src/infrastructure/api/supabase';
 
 const styles = StyleSheet.create({
@@ -17,24 +16,31 @@ const styles = StyleSheet.create({
   backText: { color: '#F4A261', fontWeight: '600' },
 });
 
+// ✅ SIEMPRE usar Vercel como intermediario (funciona en Expo Go Y en APK)
+const RESET_REDIRECT_URL = 'https://pet-adopt-web-five.vercel.app/?type=recovery';
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
 
   const handleSend = async () => {
+    if (!email.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu correo electrónico.');
+      return;
+    }
     try {
       setSending(true);
-
-      // Generamos la URL nativa (dará exp://... en desarrollo y petadopt://... en el APK)
-      const redirectToUrl = Linking.createURL('auth/callback');
-      console.log('🔗 Solicitando recuperación con redirección directa a:', redirectToUrl);
+      console.log('🔗 Enviando reset con redirect a Vercel:', RESET_REDIRECT_URL);
 
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: redirectToUrl,
+        redirectTo: RESET_REDIRECT_URL,
       });
 
       if (error) throw error;
-      Alert.alert('Correo enviado', 'Revisa tu bandeja de entrada para restablecer tu contraseña.');
+      Alert.alert(
+        'Correo enviado ✅',
+        'Revisa tu bandeja de entrada. El enlace te llevará a una página web donde podrás cambiar tu contraseña.',
+      );
       router.back();
     } catch (err: any) {
       console.error('❌ Error al enviar correo de recuperación:', err);

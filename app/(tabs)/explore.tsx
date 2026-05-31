@@ -279,6 +279,7 @@ export default function ExploreScreen() {
   };
 
   if (loading) {
+    console.log('🌀 RENDER LOADER desde ExploreScreen — loading:', loading, 'user:', user?.id ?? 'null');
     return (
       <View style={tw`flex-1 justify-center items-center bg-[#FFF7ED]`}>
         <ActivityIndicator size="large" color="#F4A261" />

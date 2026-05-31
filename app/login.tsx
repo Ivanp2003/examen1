@@ -3,6 +3,7 @@ import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInpu
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import Constants, { AppOwnership } from 'expo-constants';
 import { supabase } from '../src/infrastructure/api/supabase';
 import LottieView from 'lottie-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -322,62 +323,68 @@ export default function LoginScreen() {
                     onPress={async () => {
                       try {
                         setGoogleLoading(true);
-                        // Lazy import: si falla (Expo Go sin build nativo), usamos WebBrowser fallback
-                        let GoogleSignin: any;
-                        let statusCodes: any = {};
-                        try {
-                          const g = require('@react-native-google-signin/google-signin');
-                          GoogleSignin = g.GoogleSignin;
-                          statusCodes = g.statusCodes;
-                        } catch {
-                          console.warn('⚠️ GoogleSignin nativo no disponible (probablemente Expo Go). Usando fallback WebBrowser...');
-                          const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-                          if (!supabaseUrl) {
-                            console.error('❌ EXPO_PUBLIC_SUPABASE_URL no está definida.');
-                            setGoogleLoading(false);
+
+                        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+                        if (!supabaseUrl) {
+                          Alert.alert('Error', 'EXPO_PUBLIC_SUPABASE_URL no configurada.');
+                          setGoogleLoading(false);
+                          return;
+                        }
+
+                        // Detectar si estamos en Expo Go
+                        const isExpoGoEnv = Constants.appOwnership === AppOwnership.Expo;
+
+                        if (!isExpoGoEnv) {
+                          // ✅ APK: usar Google Sign-In nativo
+                          try {
+                            const g = require('@react-native-google-signin/google-signin');
+                            const GoogleSignin = g.GoogleSignin;
+
+                            const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+                            if (!webClientId) throw new Error('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID no configurada');
+
+                            GoogleSignin.configure({ webClientId, offlineAccess: true });
+                            await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+                            const userInfo = await GoogleSignin.signIn();
+                            const idToken = userInfo.data?.idToken;
+
+                            if (idToken) {
+                              const { error } = await supabase.auth.signInWithIdToken({
+                                provider: 'google',
+                                token: idToken,
+                              });
+                              if (error) throw error;
+                            }
+                            return;
+                          } catch (nativeError: any) {
+                            console.error('❌ Error Google nativo:', nativeError);
+                            Alert.alert('Error', nativeError.message || 'Error con Google Sign-In nativo');
                             return;
                           }
-                          const supabaseAuthUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=petadopt://auth/callback`;
-                          await WebBrowser.openBrowserAsync(supabaseAuthUrl);
-                          return;
                         }
 
-                        const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-                        if (!webClientId) {
-                          console.error('❌ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID no está definida.');
-                          setGoogleLoading(false);
-                          return;
-                        }
+                        // ✅ Expo Go: OAuth via WebBrowser (sin tocar RNGoogleSignin)
+                        console.log('📱 Expo Go detectado — usando OAuth WebBrowser...');
 
-                        GoogleSignin.configure({ webClientId, offlineAccess: true });
+                        const { data, error } = await supabase.auth.signInWithOAuth({
+                          provider: 'google',
+                          options: {
+                            redirectTo: 'https://pet-adopt-web-five.vercel.app/',
+                            skipBrowserRedirect: true,
+                          },
+                        });
 
-                        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-                        const userInfo = await GoogleSignin.signIn();
-                        const idToken = userInfo.data?.idToken;
+                        if (error) throw error;
+                        if (!data.url) throw new Error('No se obtuvo URL de OAuth');
 
-                        if (idToken) {
-                          console.log('🔑 idToken obtenido nativamente. Iniciando sesión en Supabase...');
-                          const { error } = await supabase.auth.signInWithIdToken({
-                            provider: 'google',
-                            token: idToken,
-                          });
-                          if (error) throw error;
-                          console.log('✅ Sesión establecida via signInWithIdToken.');
-                        } else {
-                          console.warn('⚠️ No se recibió idToken de Google.');
-                          setGoogleLoading(false);
-                        }
+                        console.log('🌐 Abriendo Google OAuth en browser externo...');
+                        await WebBrowser.openAuthSessionAsync(data.url, 'petadopt://');
+
                       } catch (error: any) {
+                        console.error('❌ Error Google Sign-In:', error);
+                        Alert.alert('Error', error.message || 'No se pudo iniciar sesión con Google.');
+                      } finally {
                         setGoogleLoading(false);
-                        if (error.code === statusCodes?.SIGN_IN_CANCELLED) {
-                          console.log('👤 Usuario canceló el login nativo de Google.');
-                        } else if (error.code === statusCodes?.IN_PROGRESS) {
-                          console.log('⏳ Login nativo de Google en progreso...');
-                        } else if (error.code === statusCodes?.PLAY_SERVICES_NOT_AVAILABLE) {
-                          console.error('❌ Google Play Services no disponible.');
-                        } else {
-                          console.error('❌ Error en Google Sign-In nativo:', error);
-                        }
                       }
                     }}
                     activeOpacity={0.85}

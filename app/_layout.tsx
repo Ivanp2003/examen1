@@ -24,7 +24,7 @@ export default function RootLayout() {
   const setUser = useAppStore((state) => state.setUser);
   const segments = useSegments();
   const router = useRouter();
-  const segmentsRef = useRef(segments);
+  const segmentsRef = useRef<string[]>(segments);
   segmentsRef.current = segments;
   const routerRef = useRef(router);
   routerRef.current = router;
@@ -64,52 +64,63 @@ export default function RootLayout() {
       }
 
       if (session?.user) {
-        // Obtener los datos del perfil de la tabla usuarios
-        const { data: profile, error: profileError } = await supabase
-          .from('usuarios')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          const userId = session.user.id;
+          console.log('🔐 _layout session:', session?.user?.id);
 
-        if (profileError) {
-          console.error('❌ Error obteniendo perfil:', profileError);
+          // 1. Intentar obtener el perfil
+          let { data: profile, error: profileError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          console.log('🔐 _layout profile:', profile?.id ?? 'null', 'error:', profileError?.code ?? 'none');
 
-          // Si el perfil no existe, crearlo
-          if (profileError.code === 'PGRST116') {
+          // 2. Si no existe, lo creamos y ESPERAMOS a que termine la base de datos
+          if (profileError && profileError.code === 'PGRST116') {
             console.log('📝 Usuario no existe en tabla usuarios, creando perfil...');
-            const { error: insertError } = await supabase.from('usuarios').insert({
-              id: session.user.id,
-              email: session.user.email,
-              nombre: session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || 'Usuario',
-              role: session.user.user_metadata?.role || 'adoptante',
-              metadata: session.user.user_metadata || {},
-            });
+            const { data: nuevoPerfil, error: insertError } = await supabase
+              .from('usuarios')
+              .insert({
+                id: userId,
+                email: session.user.email,
+                nombre: session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || 'Usuario',
+                role: session.user.user_metadata?.role || 'adoptante',
+                metadata: session.user.user_metadata || {},
+              })
+              .select()
+              .single();
 
-            if (insertError) {
-              console.error('❌ Error creando perfil:', insertError);
-            } else {
-              console.log('✅ Perfil creado exitosamente');
-            }
+            if (insertError) throw insertError;
+            profile = nuevoPerfil;
+            console.log('✅ Perfil creado exitosamente');
+          } else if (profileError) {
+            console.error('❌ Error obteniendo perfil:', profileError);
           }
-        }
 
-        // Forzar la actualización del usuario en el store global
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          role: profile?.role || session.user.user_metadata?.role || 'adoptante',
-          nombre: profile?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || 'Usuario',
-          metadata: profile?.metadata || session.user.user_metadata || {},
-          created_at: profile?.created_at || session.user.created_at,
-        });
-        console.log('✅ Usuario actualizado en store:', session.user.id);
+          // 3. PRIMERO actualizamos el estado global/store de la app
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role: profile?.role || session.user.user_metadata?.role || 'adoptante',
+            nombre: profile?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || 'Usuario',
+            metadata: profile?.metadata || session.user.user_metadata || {},
+            created_at: profile?.created_at || session.user.created_at,
+          });
+          console.log('✅ Store actualizado con el perfil:', session.user.id);
 
-        // Redirigir si está en pantallas de auth
-        const inAuthGroup = segmentsRef.current[0] === 'login' || segmentsRef.current[0] === 'register' || segmentsRef.current[0] === 'auth';
-        if (inAuthGroup) {
-          console.log('🚀 Redirigiendo desde auth screen al catálogo');
-          WebBrowser.dismissBrowser();
-          routerRef.current.replace('/(tabs)');
+          // 4. Solo redirigir en login normal (email/password), no en OAuth
+          // OAuth ya redirige desde auth/callback.tsx directamente
+          const inLoginOrRegister =
+            segmentsRef.current[0] === 'login' ||
+            segmentsRef.current[0] === 'register';
+
+          if (inLoginOrRegister && event === 'SIGNED_IN') {
+            console.log('🚀 Login normal — redirigiendo a tabs');
+            setTimeout(() => routerRef.current.replace('/(tabs)'), 100);
+          }
+        } catch (err: any) {
+          console.error('❌ Error en el flujo de auth:', err);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -119,7 +130,8 @@ export default function RootLayout() {
     });
 
     const handleOAuthCallback = async (url: string) => {
-      if (url.includes('access_token') || url.includes('error_code') || url.includes('code')) {
+      // ✅ Solo procesar si tiene tokens reales, ignorar URLs sin tokens
+      if (url.includes('access_token') || url.includes('code=')) {
         console.log('🔗 OAuth callback URL:', url.substring(0, 80));
         oauthCallback.setUrl(url);
         console.log('💾 URL guardada en singleton, verificando:', oauthCallback.getUrl() ? 'OK' : 'FALLÓ');

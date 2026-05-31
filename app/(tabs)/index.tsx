@@ -23,6 +23,10 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  useEffect(() => {
+    console.log('🏠 (tabs)/index loading:', loading, 'profile:', user?.id ?? 'null', 'role:', role);
+  }, [loading, user, role]);
+
   const fetchPets = useCallback(async () => {
     try {
       console.log('🔄 fetchPets - Role:', role);
@@ -94,6 +98,7 @@ export default function HomeScreen() {
   );
 
   if (loading) {
+    console.log('🌀 RENDER LOADER desde HomeScreen — loading:', loading, 'user:', user?.id ?? 'null', 'role:', role);
     return (
       <View style={tw`flex-1 bg-[#FFF7ED] items-center justify-center`}>
         <PawAnimation size={120} />
