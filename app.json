@@ -63,10 +63,10 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "13dfee25-0876-4a72-adce-477059bdc963"
+        "projectId": "3f11369f-a7f8-4d98-80e2-1b70fc00be7f"
       }
     },
-    "owner": "ivannandres",
+    "owner": "iandres",
     "updates": {
       "checkAutomatically": "NEVER"
     }
