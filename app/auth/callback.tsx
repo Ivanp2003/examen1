@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../../src/infrastructure/api/supabase';
 import { oauthCallback } from '../../src/infrastructure/api/oauthCallback';
 import tw from 'twrnc';
@@ -9,6 +10,9 @@ export default function AuthCallback() {
   const linkingUrl = Linking.useURL();
 
   useEffect(() => {
+    // 🛠️ Forzar cierre de la pestaña de Chrome que quedó abierta
+    WebBrowser.dismissBrowser();
+
     const createSessionFromUrl = async (urlStr: string) => {
       try {
         console.log("🔗 Analizando URL cruda en callback:", urlStr);

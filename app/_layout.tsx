@@ -226,6 +226,7 @@ export default function RootLayout() {
         <Stack.Screen name="adopt/[id]" />
         <Stack.Screen name="auth/forgot" />
         <Stack.Screen name="auth/callback" />
+        <Stack.Screen name="auth/google-login" />
         <Stack.Screen name="auth/reset" />
         <Stack.Screen name="chat-room" />
       </Stack>

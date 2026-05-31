@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, ActivityIndicator, Text, TouchableOpacity, Alert, Platform, ToastAndroid } from 'react-native';
+import { WebView } from 'react-native-webview';
 import tw from 'twrnc';
-import MapView, { Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { supabase } from '../../src/infrastructure/api/supabase';
 import { useAppStore } from '../../src/application/store/useAppStore';
@@ -15,30 +15,10 @@ interface Shelter {
   description: string;
 }
 
-
-// Refugios de fallback para demostración (coordenadas Quito/EPN)
 const FALLBACK_SHELTERS: Shelter[] = [
-  {
-    id: 'shelter-1',
-    nombre: 'Refugio Esperanza',
-    latitude: -0.2105,
-    longitude: -78.4916,
-    description: 'Refugio de mascotas - Listo para adoptar',
-  },
-  {
-    id: 'shelter-2',
-    nombre: 'Hogar Animal',
-    latitude: -0.2150,
-    longitude: -78.4850,
-    description: 'Refugio de mascotas - Listo para adoptar',
-  },
-  {
-    id: 'shelter-3',
-    nombre: 'Patitas Felices',
-    latitude: -0.2050,
-    longitude: -78.4980,
-    description: 'Refugio de mascotas - Listo para adoptar',
-  },
+  { id: 'shelter-1', nombre: 'Refugio Esperanza', latitude: -0.2105, longitude: -78.4916, description: 'Refugio de mascotas - Listo para adoptar' },
+  { id: 'shelter-2', nombre: 'Hogar Animal', latitude: -0.2150, longitude: -78.4850, description: 'Refugio de mascotas - Listo para adoptar' },
+  { id: 'shelter-3', nombre: 'Patitas Felices', latitude: -0.2050, longitude: -78.4980, description: 'Refugio de mascotas - Listo para adoptar' },
 ];
 
 export default function ExploreScreen() {
@@ -61,7 +41,6 @@ export default function ExploreScreen() {
 
   const isOnline = async (): Promise<boolean> => {
     try {
-      // Endpoint de conectividad ligera (204)
       await fetch('https://www.gstatic.com/generate_204', { method: 'GET' });
       return true;
     } catch {
@@ -69,14 +48,12 @@ export default function ExploreScreen() {
     }
   };
 
-  // Calcular distancia usando fórmula Haversine (en km)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Radio de la Tierra en km
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
@@ -84,15 +61,8 @@ export default function ExploreScreen() {
 
   const handleShelterPress = (shelter: Shelter) => {
     if (!userLocation) return;
-    
     setSelectedShelter(shelter);
-    const dist = calculateDistance(
-      userLocation.latitude,
-      userLocation.longitude,
-      shelter.latitude,
-      shelter.longitude
-    );
-    setDistance(dist);
+    setDistance(calculateDistance(userLocation.latitude, userLocation.longitude, shelter.latitude, shelter.longitude));
   };
 
   const clearSelection = () => {
@@ -118,10 +88,7 @@ export default function ExploreScreen() {
         .single();
       if (selErr && selErr.code !== 'PGRST116') throw selErr;
       const newMetadata = { ...(existing?.metadata || {}), latitude: coords.latitude, longitude: coords.longitude };
-      const { error: updErr } = await supabase
-        .from('usuarios')
-        .update({ metadata: newMetadata })
-        .eq('id', user.id);
+      const { error: updErr } = await supabase.from('usuarios').update({ metadata: newMetadata }).eq('id', user.id);
       if (updErr) throw updErr;
 
       const me: Shelter = {
@@ -133,11 +100,7 @@ export default function ExploreScreen() {
       };
       setShelters((prev) => {
         const idx = prev.findIndex((s) => s.id === user.id);
-        if (idx >= 0) {
-          const copy = [...prev];
-          copy[idx] = me;
-          return copy;
-        }
+        if (idx >= 0) { const copy = [...prev]; copy[idx] = me; return copy; }
         return [...prev, me];
       });
       setSelectedShelter(me);
@@ -148,7 +111,7 @@ export default function ExploreScreen() {
       console.log('✅ Ubicación del refugio guardada');
       showToast('Ubicación del refugio guardada');
     } catch (e) {
-      console.error('❌ Error guardando ubicación del refugio:', e);
+      console.error('❌ Error guardando ubicación:', e);
       showToast('Error al guardar la ubicación');
     } finally {
       setSaving(false);
@@ -158,46 +121,31 @@ export default function ExploreScreen() {
   useEffect(() => {
     (async () => {
       try {
-        // Solicitar permisos de ubicación
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          console.log('Permiso de ubicación denegado, usando ubicación por defecto');
           setUserLocation({ latitude: -0.2105, longitude: -78.4916 });
         } else {
-          // Obtener ubicación actual
           const loc = await Location.getCurrentPositionAsync({});
-          setUserLocation({
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-          });
+          setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
         }
-
-        // Cargar refugios de Supabase
         const { data: sheltersData, error } = await supabase
           .from('usuarios')
           .select('id, nombre, metadata')
           .eq('role', 'refugio');
-
         if (error) {
-          console.error('Error cargando refugios:', error);
           setShelters(FALLBACK_SHELTERS);
         } else if (sheltersData && sheltersData.length > 0) {
-          // Convertir datos de Supabase a formato de marcadores
-          const shelterMarkers: Shelter[] = sheltersData.map((s: any) => ({
+          setShelters(sheltersData.map((s: any) => ({
             id: s.id,
             nombre: s.nombre || 'Refugio',
             latitude: s.metadata?.latitude || -0.2105,
             longitude: s.metadata?.longitude || -78.4916,
             description: 'Refugio de mascotas - Listo para adoptar',
-          }));
-          setShelters(shelterMarkers);
+          })));
         } else {
-          // Usar refugios de fallback si no hay datos
-          console.log('No hay refugios en la base de datos, usando fallback');
           setShelters(FALLBACK_SHELTERS);
         }
-      } catch (error) {
-        console.error('Error en inicialización:', error);
+      } catch {
         setUserLocation({ latitude: -0.2105, longitude: -78.4916 });
         setShelters(FALLBACK_SHELTERS);
       } finally {
@@ -205,6 +153,130 @@ export default function ExploreScreen() {
       }
     })();
   }, []);
+
+  const centerLat = selectedShelter?.latitude ?? userLocation?.latitude ?? -0.2105;
+  const centerLon = selectedShelter?.longitude ?? userLocation?.longitude ?? -78.4916;
+
+  const mapHtml = useMemo(() => {
+    const sheltersJson = JSON.stringify(shelters);
+    const userLat = userLocation?.latitude ?? null;
+    const userLon = userLocation?.longitude ?? null;
+    const selectedId = selectedShelter?.id ?? null;
+    const selectedLat = selectedShelter?.latitude ?? null;
+    const selectedLon = selectedShelter?.longitude ?? null;
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    .leaflet-popup-content-wrapper { border-radius: 12px; }
+    .leaflet-popup-content { font-family: sans-serif; font-size: 14px; margin: 8px 12px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    (function() {
+      var map = L.map('map').setView([${centerLat}, ${centerLon}], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      var shelters = ${sheltersJson};
+      var userLat = ${userLat !== null ? userLat : 'null'};
+      var userLon = ${userLon !== null ? userLon : 'null'};
+      var selectedId = ${selectedId !== null ? '"' + selectedId + '"' : 'null'};
+      var selectedLat = ${selectedLat !== null ? selectedLat : 'null'};
+      var selectedLon = ${selectedLon !== null ? selectedLon : 'null'};
+
+      // Marcadores de refugios
+      shelters.forEach(function(s) {
+        var color = (selectedId && s.id === selectedId) ? '#E76F51' : '#F4A261';
+        var marker = L.circleMarker([s.latitude, s.longitude], {
+          radius: 10, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
+        }).addTo(map);
+        marker.bindPopup('<b>' + s.nombre + '</b><br/>' + s.description);
+        marker.on('click', function() {
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'shelterSelected',
+              id: s.id,
+              nombre: s.nombre,
+              lat: s.latitude,
+              lon: s.longitude
+            }));
+          }
+        });
+      });
+
+      // Marcador del usuario
+      if (userLat !== null && userLon !== null) {
+        L.circleMarker([userLat, userLon], {
+          radius: 8, fillColor: '#4285F4', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
+        }).addTo(map).bindPopup('Tu ubicación').openPopup();
+      }
+
+      // Línea entre usuario y refugio seleccionado
+      if (userLat !== null && userLon !== null && selectedLat !== null && selectedLon !== null) {
+        var latlngs = [
+          [userLat, userLon],
+          [selectedLat, selectedLon]
+        ];
+        L.polyline(latlngs, { color: '#F4A261', weight: 4, opacity: 0.8, dashArray: '8, 6' }).addTo(map);
+      }
+
+      // Marcador pendiente
+      var pendingLat = null;
+      var pendingLon = null;
+      var pendingMarker = null;
+
+      map.on('contextmenu', function(e) {
+        pendingLat = e.latlng.lat;
+        pendingLon = e.latlng.lng;
+        if (pendingMarker) map.removeLayer(pendingMarker);
+        pendingMarker = L.circleMarker([pendingLat, pendingLon], {
+          radius: 8, fillColor: '#2E86DE', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
+        }).addTo(map).bindPopup('Ubicación seleccionada (guardar)').openPopup();
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'longPress',
+            lat: pendingLat,
+            lon: pendingLon
+          }));
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+    `;
+  }, [shelters, userLocation, selectedShelter, centerLat, centerLon]);
+
+  const handleWebViewMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'shelterSelected') {
+        const shelter: Shelter = {
+          id: data.id,
+          nombre: data.nombre,
+          latitude: data.lat,
+          longitude: data.lon,
+          description: 'Refugio de mascotas - Listo para adoptar',
+        };
+        handleShelterPress(shelter);
+      } else if (data.type === 'longPress') {
+        setPendingLocation({ latitude: data.lat, longitude: data.lon });
+      }
+    } catch (e) {
+      console.warn('Error procesando mensaje del WebView:', e);
+    }
+  };
 
   if (loading) {
     return (
@@ -215,84 +287,16 @@ export default function ExploreScreen() {
     );
   }
 
-  const region = userLocation
-    ? {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      }
-    : {
-        latitude: -0.2105,
-        longitude: -78.4916,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      };
-
   return (
     <View style={tw`flex-1 w-full h-full bg-[#FFF7ED]`}>
-      <MapView
+      <WebView
+        originWhitelist={['*']}
+        source={{ html: mapHtml }}
         style={tw`flex-1 w-full h-full`}
-        initialRegion={region}
-        showsUserLocation
-        showsMyLocationButton
-        onLongPress={(e) => setPendingLocation(e.nativeEvent.coordinate)}
-      >
-        {/* Marcador pendiente del refugio (seleccionado por long-press) */}
-        {pendingLocation && (
-          <Marker
-            coordinate={pendingLocation}
-            title="Mi refugio (pendiente)"
-            description="Mantén pulsado para mover y luego guarda"
-            pinColor="#2E86DE"
-          />
-        )}
-        {/* Marcador del usuario (azul) */}
-        {userLocation && (
-          <Marker
-            coordinate={{
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
-            }}
-            title="Tu ubicación"
-            description="Estás aquí"
-            pinColor="#4285F4"
-          />
-        )}
-
-        {/* Línea entre usuario y refugio seleccionado */}
-        {selectedShelter && userLocation && (
-          <Polyline
-            coordinates={[
-              {
-                latitude: userLocation.latitude,
-                longitude: userLocation.longitude,
-              },
-              {
-                latitude: selectedShelter.latitude,
-                longitude: selectedShelter.longitude,
-              },
-            ]}
-            strokeColor="#F4A261"
-            strokeWidth={3}
-          />
-        )}
-
-        {/* Marcadores de refugios */}
-        {shelters.map((shelter) => (
-          <Marker
-            key={shelter.id}
-            coordinate={{
-              latitude: shelter.latitude,
-              longitude: shelter.longitude,
-            }}
-            title={shelter.nombre}
-            description={shelter.description}
-            pinColor={selectedShelter?.id === shelter.id ? "#E76F51" : "#F4A261"}
-            onPress={() => handleShelterPress(shelter)}
-          />
-        ))}
-      </MapView>
+        onMessage={handleWebViewMessage}
+        javaScriptEnabled
+        domStorageEnabled
+      />
 
       {user?.role === 'refugio' && (
         <TouchableOpacity
@@ -314,7 +318,6 @@ export default function ExploreScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Card de distancia */}
       {selectedShelter && distance !== null && (
         <View style={tw`absolute bottom-6 left-4 right-4 bg-white rounded-2xl p-4 shadow-sm border border-[#F1F3F5]`}>
           <Text style={tw`text-sm text-[#6D597A] font-medium`}>Distancia al refugio</Text>

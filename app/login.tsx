@@ -2,18 +2,18 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
-import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import { supabase } from '../src/infrastructure/api/supabase';
 import LottieView from 'lottie-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
-import { LoginUseCase, LoginWithGoogleUseCase } from '../src/application/use-cases/AuthUseCases';
+import { LoginUseCase } from '../src/application/use-cases/AuthUseCases';
 import { useAppStore } from '../src/application/store/useAppStore';
 
 const { width } = Dimensions.get('window');
 
 const authRepo = new SupabaseAuthRepository();
 const loginUseCase = new LoginUseCase(authRepo);
-const loginWithGoogleUseCase = new LoginWithGoogleUseCase(authRepo);
 
 const styles = StyleSheet.create({
   container: {
@@ -322,37 +322,62 @@ export default function LoginScreen() {
                     onPress={async () => {
                       try {
                         setGoogleLoading(true);
-                        const redirectUrl = Linking.createURL('auth/callback');
-                        console.log('🔗 Abriendo navegador para Google OAuth...');
+                        // Lazy import: si falla (Expo Go sin build nativo), usamos WebBrowser fallback
+                        let GoogleSignin: any;
+                        let statusCodes: any = {};
+                        try {
+                          const g = require('@react-native-google-signin/google-signin');
+                          GoogleSignin = g.GoogleSignin;
+                          statusCodes = g.statusCodes;
+                        } catch {
+                          console.warn('⚠️ GoogleSignin nativo no disponible (probablemente Expo Go). Usando fallback WebBrowser...');
+                          const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+                          if (!supabaseUrl) {
+                            console.error('❌ EXPO_PUBLIC_SUPABASE_URL no está definida.');
+                            setGoogleLoading(false);
+                            return;
+                          }
+                          const supabaseAuthUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=petadopt://auth/callback`;
+                          await WebBrowser.openBrowserAsync(supabaseAuthUrl);
+                          return;
+                        }
 
-                        // openBrowserAsync abre el navegador y resuelve cuando se cierra.
-                        // El redirect a exp:// es capturado por Linking.addEventListener en _layout.tsx
-                        await loginWithGoogleUseCase.execute(redirectUrl);
+                        const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+                        if (!webClientId) {
+                          console.error('❌ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID no está definida.');
+                          setGoogleLoading(false);
+                          return;
+                        }
 
-                        // Al volver del navegador: si el Linking event ya procesó la auth,
-                        // el usuario ya fue navegado a /(tabs) y este componente se desmontó.
-                        // Si no, reseteamos el loading.
-                        if (!useAppStore.getState().user) {
+                        GoogleSignin.configure({ webClientId, offlineAccess: true });
+
+                        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+                        const userInfo = await GoogleSignin.signIn();
+                        const idToken = userInfo.data?.idToken;
+
+                        if (idToken) {
+                          console.log('🔑 idToken obtenido nativamente. Iniciando sesión en Supabase...');
+                          const { error } = await supabase.auth.signInWithIdToken({
+                            provider: 'google',
+                            token: idToken,
+                          });
+                          if (error) throw error;
+                          console.log('✅ Sesión establecida via signInWithIdToken.');
+                        } else {
+                          console.warn('⚠️ No se recibió idToken de Google.');
                           setGoogleLoading(false);
                         }
-                      } catch (err: any) {
-                        console.error('❌ Error en Google OAuth:', err);
+                      } catch (error: any) {
                         setGoogleLoading(false);
-
-                        console.warn('⚠️ Ejecutando Bypass de Google Login para entorno de demostración');
-
-                        const mockUser = {
-                          id: 'a44d294a-bcc0-4ec4-bf75-222761315ec8',
-                          email: 'kogamaandres@gmail.com',
-                          role: 'refugio' as const,
-                          nombre: 'Iván Andrés Panchi Chávez',
-                          metadata: {},
-                          created_at: new Date().toISOString(),
-                        };
-
-                        setUser(mockUser);
-                        router.replace('/(tabs)');
-                        Alert.alert('Modo Demo', 'Sesión iniciada correctamente con perfil de respaldo.');
+                        if (error.code === statusCodes?.SIGN_IN_CANCELLED) {
+                          console.log('👤 Usuario canceló el login nativo de Google.');
+                        } else if (error.code === statusCodes?.IN_PROGRESS) {
+                          console.log('⏳ Login nativo de Google en progreso...');
+                        } else if (error.code === statusCodes?.PLAY_SERVICES_NOT_AVAILABLE) {
+                          console.error('❌ Google Play Services no disponible.');
+                        } else {
+                          console.error('❌ Error en Google Sign-In nativo:', error);
+                        }
                       }
                     }}
                     activeOpacity={0.85}
