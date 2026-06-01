@@ -39,8 +39,8 @@ async function init() {
             });
             if (error) throw error;
 
-            // Redirigir con el deep link de la app
-            const appDeepLink = 'petadopt://auth/callback#access_token=' + hashAccessToken + '&refresh_token=' + hashRefreshToken;
+            // Redirigir con el deep link de la app (query params, no hash)
+            const appDeepLink = 'petadopt://auth/callback?access_token=' + encodeURIComponent(hashAccessToken) + '&refresh_token=' + encodeURIComponent(hashRefreshToken);
             window.location.href = appDeepLink;
             return;
         }
@@ -53,7 +53,7 @@ async function init() {
 
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                const appDeepLink = 'petadopt://auth/callback#access_token=' + session.access_token + '&refresh_token=' + session.refresh_token;
+                const appDeepLink = 'petadopt://auth/callback?access_token=' + encodeURIComponent(session.access_token) + '&refresh_token=' + encodeURIComponent(session.refresh_token);
                 window.location.href = appDeepLink;
             }
             return;

@@ -1,7 +1,6 @@
 import { User } from '../../domain/entities/User';
 import { IAuthRepository } from '../../domain/repositories/IAuthRepository';
 import { supabase } from '../api/supabase';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -31,21 +30,46 @@ export class SupabaseAuthRepository implements IAuthRepository {
     };
   }
 
-  async loginWithGoogle(redirectUrl?: string): Promise<void> {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl || Linking.createURL('auth/callback'),
-        skipBrowserRedirect: true,
-      },
-    });
+  async signInWithGoogle(): Promise<{ user: any; error: any }> {
+    try {
+      const redirectTo = 'petadopt://auth/callback';
 
-    if (error) throw error;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+        },
+      });
 
-    if (data.url) {
-      await WebBrowser.openBrowserAsync(data.url);
-    } else {
-      throw new Error('No se recibió URL de autorización');
+      if (error) throw error;
+      if (!data?.url) throw new Error('No se pudo generar la URL de autenticación.');
+
+      console.log('🌐 Abriendo sesión de navegador, esperando redirect a petadopt://...');
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+      if (result.type === 'success' && result.url) {
+        console.log('✅ Regreso del navegador. Procesando URL...');
+        const hashFragment = result.url.split('#')[1] || '';
+        const hashParams = new URLSearchParams(hashFragment);
+
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+
+        if (accessToken && refreshToken) {
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+          return { user: sessionData.user, error: null };
+        }
+
+        console.warn('⚠️ URL de retorno sin tokens:', result.url.substring(0, 80));
+      }
+
+      return { user: null, error: new Error('Autenticación cancelada o fallida') };
+    } catch (error: any) {
+      return { user: null, error };
     }
   }
 

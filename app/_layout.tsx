@@ -1,36 +1,39 @@
 import '../global.css';
-import { Stack, useSegments, useRouter } from 'expo-router';
+import { Slot, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import Constants, { AppOwnership } from 'expo-constants';
 import { supabase } from '../src/infrastructure/api/supabase';
 import { useAppStore } from '../src/application/store/useAppStore';
 import { oauthCallback } from '../src/infrastructure/api/oauthCallback';
+import { NotificationsDataSource } from '../src/infrastructure/datasources/NotificationsDataSource';
 
 const isExpoGo = Constants.appOwnership === AppOwnership.Expo;
 
 console.log('_layout cargando...');
 console.log('GestureHandlerRootView:', typeof GestureHandlerRootView);
 console.log('StatusBar:', typeof StatusBar);
-console.log('Stack:', typeof Stack);
+console.log('Slot:', typeof Slot);
 console.log('📱 Entorno:', isExpoGo ? 'Expo Go' : 'Standalone APK');
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
   const setUser = useAppStore((state) => state.setUser);
+  const user = useAppStore((state) => state.user);
   const segments = useSegments();
   const router = useRouter();
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const segmentsRef = useRef<string[]>(segments);
   segmentsRef.current = segments;
   const routerRef = useRef(router);
   routerRef.current = router;
 
+  // 1. Inicialización de notificaciones
   useEffect(() => {
-    // Inicialización segura de notificaciones (solo fuera de Expo Go)
     if (!isExpoGo) {
       try {
         const Notifications = require('expo-notifications');
@@ -50,16 +53,31 @@ export default function RootLayout() {
         console.error('❌ Error cargando notificaciones nativas:', e);
       }
     } else {
-      console.warn('⚠️ Ejecutando en Expo Go: Notificaciones locales desactivadas para evitar crash.');
+      console.warn('⚠️ Ejecutando en Expo Go: Notificaciones locales desactivadas.');
     }
+  }, []);
 
-    // Listener para cambios de sesión de Supabase
+  // 2. Control de Autenticación Centralizado (Supabase)
+  useEffect(() => {
+    let mounted = true;
+    let authResolved = false;
+
+    const resolveAuth = () => {
+      if (!mounted || authResolved) return;
+      authResolved = true;
+      setIsAuthChecking(false);
+    };
+
+    // Registrar listener PRIMERO para no perder eventos como INITIAL_SESSION
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      console.log(`🔐 Evento de Autenticación detectado: ${event}`);
       console.log('🔐 Auth state change:', event, session?.user?.id);
 
       if (event === 'PASSWORD_RECOVERY') {
         console.log('🔑 Recuperación de contraseña - redirigiendo a reset');
         routerRef.current.replace('/auth/reset');
+        resolveAuth();
         return;
       }
 
@@ -68,7 +86,6 @@ export default function RootLayout() {
           const userId = session.user.id;
           console.log('🔐 _layout session:', session?.user?.id);
 
-          // 1. Intentar obtener el perfil
           let { data: profile, error: profileError } = await supabase
             .from('usuarios')
             .select('*')
@@ -76,7 +93,6 @@ export default function RootLayout() {
             .single();
           console.log('🔐 _layout profile:', profile?.id ?? 'null', 'error:', profileError?.code ?? 'none');
 
-          // 2. Si no existe, lo creamos y ESPERAMOS a que termine la base de datos
           if (profileError && profileError.code === 'PGRST116') {
             console.log('📝 Usuario no existe en tabla usuarios, creando perfil...');
             const { data: nuevoPerfil, error: insertError } = await supabase
@@ -98,7 +114,6 @@ export default function RootLayout() {
             console.error('❌ Error obteniendo perfil:', profileError);
           }
 
-          // 3. PRIMERO actualizamos el estado global/store de la app
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -108,45 +123,98 @@ export default function RootLayout() {
             created_at: profile?.created_at || session.user.created_at,
           });
           console.log('✅ Store actualizado con el perfil:', session.user.id);
-
-          // 4. Solo redirigir en login normal (email/password), no en OAuth
-          // OAuth ya redirige desde auth/callback.tsx directamente
-          const inLoginOrRegister =
-            segmentsRef.current[0] === 'login' ||
-            segmentsRef.current[0] === 'register';
-
-          if (inLoginOrRegister && event === 'SIGNED_IN') {
-            console.log('🚀 Login normal — redirigiendo a tabs');
-            setTimeout(() => routerRef.current.replace('/(tabs)'), 100);
-          }
+          resolveAuth();
         } catch (err: any) {
           console.error('❌ Error en el flujo de auth:', err);
+          resolveAuth();
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         console.log('👋 Usuario deslogueado');
-        routerRef.current.replace('/login');
+        resolveAuth();
+      } else {
+        // INITIAL_SESSION sin usuario u otros eventos
+        resolveAuth();
       }
     });
 
-    const handleOAuthCallback = async (url: string) => {
-      // ✅ Solo procesar si tiene tokens reales, ignorar URLs sin tokens
-      if (url.includes('access_token') || url.includes('code=')) {
-        console.log('🔗 OAuth callback URL:', url.substring(0, 80));
-        oauthCallback.setUrl(url);
-        console.log('💾 URL guardada en singleton, verificando:', oauthCallback.getUrl() ? 'OK' : 'FALLÓ');
-        routerRef.current.replace('/auth/callback');
+    // Luego verificar sesión existente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      console.log('📦 Sesión inicial recuperada:', session ? 'Usuario detectado' : 'Vacía');
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          role: session.user.user_metadata?.role || 'adoptante',
+          nombre: session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || 'Usuario',
+          metadata: session.user.user_metadata || {},
+          created_at: session.user.created_at,
+        });
+      } else {
+        setUser(null);
       }
+      resolveAuth();
+    }).catch((err) => {
+      console.error('❌ Error al recuperar sesión:', err);
+      if (mounted) {
+        setUser(null);
+        resolveAuth();
+      }
+    });
+
+    // Safety timeout: fuerza liberación si nada resolvió en 5s
+    const safetyTimeout = setTimeout(() => {
+      if (mounted) {
+        console.log('⏰ Safety timeout - forzando isAuthChecking=false');
+        resolveAuth();
+      }
+    }, 5000);
+
+    return () => {
+      mounted = false;
+      clearTimeout(safetyTimeout);
+      authListener.subscription.unsubscribe();
     };
+  }, [setUser]);
 
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleOAuthCallback(url);
-    });
+  // 3. Registro de push token tras login exitoso
+  useEffect(() => {
+    if (user?.id) {
+      const notificationsDS = new NotificationsDataSource();
+      notificationsDS.registerPushToken(user.id);
+    }
+  }, [user?.id]);
 
-    Linking.getInitialURL().then((url) => {
-      if (url) handleOAuthCallback(url);
-    });
+  // 4. El Guardián de Rutas
+  useEffect(() => {
+    if (isAuthChecking) {
+      console.log(`⏳ Guardián esperando... isAuthChecking: ${isAuthChecking}`);
+      return;
+    }
 
+    const rootSegment = segments[0];
+    const publicRoutes = ['login', 'register', 'auth']; // ✅ cubre auth/callback, auth/reset, etc.
+    const isInsideAuthGroup = publicRoutes.includes(rootSegment);
+
+    console.log('🔍 Routing guard evaluando: user=', !!user, 'segment=', rootSegment, 'isInsideAuthGroup=', isInsideAuthGroup);
+
+    const timeout = setTimeout(() => {
+      if (!user && !isInsideAuthGroup) {
+        console.log('➡️ Guardián: Sin usuario detectado. Redirigiendo a /login');
+        router.replace('/login');
+      } else if (user && (isInsideAuthGroup || rootSegment === 'index' || rootSegment === undefined || rootSegment === 'auth')) {
+        console.log('➡️ Guardián: Usuario activo detectado. Redirigiendo a /(tabs)');
+        router.replace('/(tabs)');
+      } else {
+        console.log('✨ Guardián: Ruta correcta actual:', rootSegment);
+      }
+    }, 10);
+
+    return () => clearTimeout(timeout);
+  }, [user, segments, isAuthChecking]);
+
+  useEffect(() => {
     // Listener en tiempo real para solicitudes de adopción
     let adoptionsChannel: ReturnType<typeof supabase.channel> | null = null;
 
@@ -215,33 +283,17 @@ export default function RootLayout() {
     const realtimeTimeout = setTimeout(setupRealtime, 1000);
 
     return () => {
-      authListener.subscription.unsubscribe();
-      subscription.remove();
       clearTimeout(realtimeTimeout);
       if (adoptionsChannel) {
         adoptionsChannel.unsubscribe();
       }
     };
-  }, [setUser]);
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="pet/[id]" />
-        <Stack.Screen name="create-pet" />
-        <Stack.Screen name="ai-chat" />
-        <Stack.Screen name="adopt/[id]" />
-        <Stack.Screen name="auth/forgot" />
-        <Stack.Screen name="auth/callback" />
-        <Stack.Screen name="auth/google-login" />
-        <Stack.Screen name="auth/reset" />
-        <Stack.Screen name="chat-room" />
-      </Stack>
+      <Slot />
     </GestureHandlerRootView>
   );
 }

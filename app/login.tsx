@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
+import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import Constants, { AppOwnership } from 'expo-constants';
-import { supabase } from '../src/infrastructure/api/supabase';
 import LottieView from 'lottie-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { supabase } from '../src/infrastructure/api/supabase';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
 import { LoginUseCase } from '../src/application/use-cases/AuthUseCases';
 import { useAppStore } from '../src/application/store/useAppStore';
@@ -14,6 +14,8 @@ import { useAppStore } from '../src/application/store/useAppStore';
 const { width } = Dimensions.get('window');
 
 const authRepo = new SupabaseAuthRepository();
+
+WebBrowser.maybeCompleteAuthSession();
 const loginUseCase = new LoginUseCase(authRepo);
 
 const styles = StyleSheet.create({
@@ -194,30 +196,68 @@ const styles = StyleSheet.create({
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const setUser = useAppStore((state) => state.setUser);
-  const user = useAppStore((state) => state.user);
+  const { user } = useAppStore();
 
-  // Fallback: si el usuario ya está autenticado (por ejemplo tras OAuth), redirigir y apagar spinner
+  // Fallback: si el usuario ya está autenticado, redirigir
   useEffect(() => {
     if (user) {
-      setGoogleLoading(false);
       router.replace('/(tabs)');
     }
   }, [user]);
 
-  // Timeout de seguridad: si Google OAuth tarda más de 30s, resetear el spinner
-  useEffect(() => {
-    if (googleLoading) {
-      const timer = setTimeout(() => setGoogleLoading(false), 30000);
-      return () => clearTimeout(timer);
+  const setUser = useAppStore((state) => state.setUser);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://pet-adopt-web-five.vercel.app/',
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.url) throw new Error('No se obtuvo URL de OAuth');
+
+      // ✅ Escuchar el deep link ANTES de abrir el browser
+      const subscription = Linking.addEventListener('url', ({ url }) => {
+        console.log('🔗 Deep link recibido:', url.substring(0, 80));
+        if (url.includes('auth/callback') && url.includes('access_token')) {
+          subscription.remove();
+          // Navegar al callback con los params
+          const accessMatch = url.match(/access_token=([^&]+)/);
+          const refreshMatch = url.match(/refresh_token=([^&]+)/);
+          if (accessMatch && refreshMatch) {
+            router.replace({
+              pathname: '/auth/callback',
+              params: {
+                access_token: decodeURIComponent(accessMatch[1]),
+                refresh_token: decodeURIComponent(refreshMatch[1]),
+              },
+            });
+          }
+        }
+      });
+
+      // Abrir el browser del sistema
+      await Linking.openURL(data.url);
+    } catch (err: any) {
+      console.error('❌ Error Google:', err);
+      Alert.alert('Error', err.message || 'No se pudo iniciar sesión con Google.');
+    } finally {
+      setGoogleLoading(false);
     }
-  }, [googleLoading]);
+  };
 
   const form = useForm({
     defaultValues: { email: '', password: '' },
     onSubmit: async ({ value }) => {
       try {
-        await loginUseCase.execute(value.email, value.password);
+        const user = await loginUseCase.execute(value.email, value.password);
+        setUser(user);
         router.replace('/(tabs)');
       } catch (err: any) {
         Alert.alert('Error de inicio de sesión', err.message || 'Credenciales inválidas.');
@@ -320,73 +360,7 @@ export default function LoginScreen() {
                   </View>
 
                   <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        setGoogleLoading(true);
-
-                        const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-                        if (!supabaseUrl) {
-                          Alert.alert('Error', 'EXPO_PUBLIC_SUPABASE_URL no configurada.');
-                          setGoogleLoading(false);
-                          return;
-                        }
-
-                        // Detectar si estamos en Expo Go
-                        const isExpoGoEnv = Constants.appOwnership === AppOwnership.Expo;
-
-                        if (!isExpoGoEnv) {
-                          // ✅ APK: usar Google Sign-In nativo
-                          try {
-                            const g = require('@react-native-google-signin/google-signin');
-                            const GoogleSignin = g.GoogleSignin;
-
-                            const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-                            if (!webClientId) throw new Error('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID no configurada');
-
-                            GoogleSignin.configure({ webClientId, offlineAccess: true });
-                            await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-                            const userInfo = await GoogleSignin.signIn();
-                            const idToken = userInfo.data?.idToken;
-
-                            if (idToken) {
-                              const { error } = await supabase.auth.signInWithIdToken({
-                                provider: 'google',
-                                token: idToken,
-                              });
-                              if (error) throw error;
-                            }
-                            return;
-                          } catch (nativeError: any) {
-                            console.error('❌ Error Google nativo:', nativeError);
-                            Alert.alert('Error', nativeError.message || 'Error con Google Sign-In nativo');
-                            return;
-                          }
-                        }
-
-                        // ✅ Expo Go: OAuth via WebBrowser (sin tocar RNGoogleSignin)
-                        console.log('📱 Expo Go detectado — usando OAuth WebBrowser...');
-
-                        const { data, error } = await supabase.auth.signInWithOAuth({
-                          provider: 'google',
-                          options: {
-                            redirectTo: 'https://pet-adopt-web-five.vercel.app/',
-                            skipBrowserRedirect: true,
-                          },
-                        });
-
-                        if (error) throw error;
-                        if (!data.url) throw new Error('No se obtuvo URL de OAuth');
-
-                        console.log('🌐 Abriendo Google OAuth en browser externo...');
-                        await WebBrowser.openAuthSessionAsync(data.url, 'petadopt://');
-
-                      } catch (error: any) {
-                        console.error('❌ Error Google Sign-In:', error);
-                        Alert.alert('Error', error.message || 'No se pudo iniciar sesión con Google.');
-                      } finally {
-                        setGoogleLoading(false);
-                      }
-                    }}
+                    onPress={handleGoogleLogin}
                     activeOpacity={0.85}
                     disabled={googleLoading}
                     style={[styles.googleButton, googleLoading && { opacity: 0.7 }]}

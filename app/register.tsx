@@ -9,6 +9,7 @@ import LottieView from 'lottie-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SupabaseAuthRepository } from '../src/infrastructure/repositories/SupabaseAuthRepository';
 import { RegisterUseCase } from '../src/application/use-cases/AuthUseCases';
+import { useAppStore } from '../src/application/store/useAppStore';
 
 const authRepo = new SupabaseAuthRepository();
 const registerUseCase = new RegisterUseCase(authRepo);
@@ -192,6 +193,7 @@ export default function RegisterScreen() {
   const [role, setRole] = useState<Role>('adoptante');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const setUser = useAppStore((state) => state.setUser);
 
   const form = useForm({
     defaultValues: {
@@ -215,7 +217,8 @@ export default function RegisterScreen() {
         : { direccion: value.direccion, telefono: value.telefono };
 
       try {
-        await registerUseCase.execute(value.email, value.password, value.nombre, role, metadata);
+        const user = await registerUseCase.execute(value.email, value.password, value.nombre, role, metadata);
+        setUser(user);
         router.replace('/(tabs)');
       } catch (err: any) {
         Alert.alert('Error de registro', err.message || 'No se pudo completar el registro.');

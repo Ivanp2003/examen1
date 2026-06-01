@@ -38,7 +38,8 @@
           "autoVerify": true,
           "data": {
             "scheme": "petadopt"
-          }
+          },
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -60,7 +61,7 @@
         }
       ],
       "expo-web-browser",
-      "@react-native-google-signin/google-signin"
+      "expo-notifications"
     ],
     "extra": {
       "router": {},
@@ -70,7 +71,11 @@
     },
     "owner": "iandres",
     "updates": {
-      "checkAutomatically": "NEVER"
+      "checkAutomatically": "NEVER",
+      "url": "https://u.expo.dev/3f11369f-a7f8-4d98-80e2-1b70fc00be7f"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
